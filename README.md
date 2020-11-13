@@ -27,6 +27,11 @@ The "book" for this class includes
 1. [lectures](https://www.youtube.com/playlist?list=PLVW70f0xtTUxHXRtZhGEJAiBDFx-ofc_G) for the undergraduate OS class,
 2. the [FAQ book](TBD) for the undergraduate OS class, which will be expanded in this class, and 
 3. the source code for the various systems we'll study.
+    These will include:
+    
+    - [Composite](https://composite.seas.gwu.edu/),
+    - [seL4](https://sel4.systems/), and 
+    - Google's [Fuchsia](https://fuchsia.dev/).
 
 All of this is free, and you don't need to purchase any materials.
 

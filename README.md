@@ -43,3 +43,7 @@ The class will also require a fairly large amount of peer review, so students ha
 Compared to that class, students will be given more leeway and responsibility to manage their own time.
 Compared to the [IoT class](https://github.com/gwu-cs-iot/collaboration) (Spring '20), this class will be more traditional including continual instruction and multiple, shared homeworks.
 As such it will be less based on papers and will have more than a single project.
+
+## Grading
+
+See the [grading](./grading.md) information for more details.

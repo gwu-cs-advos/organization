@@ -9,6 +9,9 @@ References to "the book" refer to [this](https://github.com/gwu-cs-advos/advos_b
 
 ## L0: Reading Code
 
+Likely the most important part of the whole class.
+If you only read one part of the material for the class, read this.
+
 References:
 
 - See Sections on "Reading Code" and "Writing Readable Code" in the book.
@@ -25,6 +28,11 @@ References:
 - See Sections on "Complexity Management" and "System Interface Design Considerations" in the book.
 
 ## C1: Reading Document, Event Management, and Zircon
+
+How do you form your initial hypothesis about code-bases, and your initial goals?
+Often, you start with the design documents, and documentation.
+Lets start out "easy mode" and dive into a project with nice documentation.
+Lets dive into the concurrency challenges discussed in class in google's new OS, Fuchsia!
 
 Questions (complete in the provided form):
 

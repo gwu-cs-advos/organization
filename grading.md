@@ -32,6 +32,7 @@ At the end of the class, you're A- will be modified as such:
 - Every two `2`s: grade increases (B+ goes to A-, A- to A, etc...).
 - `1`s maintain your current grade.
 
+*Transparency.*
 The goal of this grading scale is to make it obvious what your grade is at any point.
 
 ## Class Participation
@@ -41,6 +42,12 @@ Every day, each group must select a group leader who will make sure that the gro
 I suggest that each group decide the group leader before the coding questions are attempted.
 Everyone is expected to contribute to the group discussion.
 Habitual silence will result in your grade being decreased -- otherwise, you're assumed to have an A.
+
+*Transparency.*
+I'll give you a single warning if you aren't sufficiently engaging.
+After that, your participation grade will be lowered once for each time I mention it.
+If I don't make it clear that you're being docked in participation, you can assume you stay at an A.
+If you don't work as leader a proportional amount (for your group), your grade will be decreased.
 
 ## Class Participation if Asynchronous
 
@@ -57,6 +64,9 @@ It is modified downwards if you
 1. don't provide sufficient testing,
 2. don't consider necessary cases, or
 3. don't provide necessary functionality.
+
+*Transparency.*
+You should know at the end of your demo what your grade is, and why it is what it is.
 
 ## Late Work
 

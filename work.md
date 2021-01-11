@@ -40,9 +40,9 @@ This week is an exceptional week:
 We have to get through a lecture before the next class.
 It is necessary to understand the code in Zircon.
 I lightened the code investigation load.
-Question about the video on [system design concerns](TBD):
+Question about the video on [system design concerns](https://youtu.be/dX3-pUvWnOk):
 
-- Why do you think that the system design concerns are seen more in system modules than in applications?
+1. Why do you think that the system design concerns are seen more in system modules than in applications?
 	For example, you might not care about parallelism, concurrency, nor naming in your application, but you must consider them in system modules.
 
 How do you form your initial hypothesis about code-bases, and your initial goals?
@@ -52,7 +52,7 @@ Lets dive into the concurrency challenges discussed in class in google's new OS,
 
 Questions (complete in the provided form):
 
-1. Describe signals and their relation to events (~3 sentences).
+1. Describe signals and their relation to events.
 2. What functions enable threads to block waiting for multiple concurrent events?
 3. List some system objects that can generate events.
 
@@ -60,7 +60,7 @@ References:
 
 - Lecture:
 
-	- Lecture video on [system design concerns](TBD).
+	- Lecture video on [system design concerns](https://youtu.be/dX3-pUvWnOk).
 	- See Section "System Interface Design Considerations" in the book.
 
 - Fuchsia:

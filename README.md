@@ -11,7 +11,7 @@ In this class, students will:
 - Understand how to do a deep, detailed dive into a code-base, and practice this in multiple code-bases with related goals.
 - Understand how security guarantees are *engineered* into systems.
 - Understand the trade-offs involved in designing for effective parallelism.
-- Implement a fully-featured RTOS on top of a microkernel.
+- Implement an OS on top of a microkernel.
 
 ## Class Prerequisites
 
@@ -24,14 +24,11 @@ If you can effectively read C code, but still feel a little shakey with the lang
 
 The "book" for this class includes
 
-1. [lectures](https://www.youtube.com/playlist?list=PLVW70f0xtTUxHXRtZhGEJAiBDFx-ofc_G) for the undergraduate OS class,
-2. the [FAQ book](TBD) for the undergraduate OS class, which will be expanded in this class, and 
+1. [lectures](https://youtube.com/playlist?list=PLVW70f0xtTUwPxQXXcQBZJps-7n8BclOc) for the class,
+2. an [outline "book"](https://github.com/gwu-cs-advos/advos_book) of the material for the class, with many references,
+1. background concepts can be learned using the [lectures](https://www.youtube.com/playlist?list=PLVW70f0xtTUxHXRtZhGEJAiBDFx-ofc_G) for the undergraduate OS class,
+2. the FAQ book for the undergraduate OS class, which will be expanded in this class, and
 3. the source code for the various systems we'll study.
-    These will include:
-    
-    - [Composite](https://composite.seas.gwu.edu/),
-    - [seL4](https://sel4.systems/), and 
-    - Google's [Fuchsia](https://fuchsia.dev/).
 
 All of this is free, and you don't need to purchase any materials.
 
@@ -46,5 +43,3 @@ The class will also require a fairly large amount of peer review, so students ha
 Compared to that class, students will be given more leeway and responsibility to manage their own time.
 Compared to the [IoT class](https://github.com/gwu-cs-iot/collaboration) (Spring '20), this class will be more traditional including continual instruction and multiple, shared homeworks.
 As such it will be less based on papers and will have more than a single project.
-
-

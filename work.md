@@ -17,18 +17,33 @@ References:
 
 - See Sections on "Reading Code" and "Writing Readable Code" in the book.
 
-## L1: Constraining System Complexity & System Design Concerns
+## L1: Constraining System Complexity
+
+Remember that you're expected to share questions you have in the feedback, so make sure to write down your questions as you go through the videos.
+Please watch the lecture video on [constraining complexity](https://youtu.be/a8V2d33KvaE).
 
 Questions (complete in the provided form):
 
-- TBD
+1. Give a few examples of modularity in desktop operating systems?
+2. Give an example of essential and accidental complexity in code you've written (briefly), and explain why you separate essential and accidental for that task?
+3. It is counter-intuitive that abstractions constrain the more chaotic behavior of lower-level interfaces, into higher level APIs.
+	Thoughts on this?
 
 References:
 
-- Lecture [video](TBD).
-- See Sections on "Complexity Management" and "System Interface Design Considerations" in the book.
+- Lecture video on [constraining complexity](https://youtu.be/a8V2d33KvaE).
+- See Sections on "Complexity Management" in the book.
 
-## C1: Reading Document, Event Management, and Zircon
+## C1: Reading Documentation, Event Management, and Zircon
+
+This week is an exceptional week:
+We have to get through a lecture before the next class.
+It is necessary to understand the code in Zircon.
+I lightened the code investigation load.
+Question about the video on [system design concerns](TBD):
+
+- Why do you think that the system design concerns are seen more in system modules than in applications?
+	For example, you might not care about parallelism, concurrency, nor naming in your application, but you must consider them in system modules.
 
 How do you form your initial hypothesis about code-bases, and your initial goals?
 Often, you start with the design documents, and documentation.
@@ -43,11 +58,18 @@ Questions (complete in the provided form):
 
 References:
 
-- [Fuchsia documentation ](https://fuchsia.dev/fuchsia-src/concepts).
-	Starting point help: We want to focus on the *kernel*'s abstractions.
-	You can find the documentation for the kernel on this page as well.
-	You can start by understanding what calls are blocking, and which are non-blocking, then move on to how the zircon notion of *signalling* is tied to events.
-- Some of the [conventions](https://fuchsia.dev/fuchsia-src/concepts/api/system) make digesting the documentation easier.
+- Lecture:
+
+	- Lecture video on [system design concerns](TBD).
+	- See Section "System Interface Design Considerations" in the book.
+
+- Fuchsia:
+
+	- [Fuchsia documentation ](https://fuchsia.dev/fuchsia-src/concepts).
+		Starting point help: We want to focus on the *kernel*'s abstractions.
+		You can find the documentation for the kernel on this page as well.
+		You can start by understanding what calls are blocking, and which are non-blocking, then move on to how the zircon notion of *signalling* is tied to events.
+	- Some of the [conventions](https://fuchsia.dev/fuchsia-src/concepts/api/system) make digesting the documentation easier.
 
 ## L2:
 

@@ -9,7 +9,8 @@ References to "the book" refer to [this](https://github.com/gwu-cs-advos/advos_b
 
 ## L0: Reading Code
 
-Likely the most important part of the whole class.
+No work needs to be done before this class!
+However, what we'll cover is likely the most important part of the whole class.
 If you only read one part of the material for the class, read this.
 
 References:
@@ -36,9 +37,9 @@ Lets dive into the concurrency challenges discussed in class in google's new OS,
 
 Questions (complete in the provided form):
 
-- Describe signals and their relation to events (~3 sentences).
-- What functions enable threads to block waiting for multiple concurrent events?
-- List some system objects that can generate events.
+1. Describe signals and their relation to events (~3 sentences).
+2. What functions enable threads to block waiting for multiple concurrent events?
+3. List some system objects that can generate events.
 
 References:
 
@@ -59,16 +60,39 @@ References:
 - Lecture [video](TBD).
 - See Section on "" in the book.
 
-## C2:
+## C2: Concurrency on Servers
 
-Questions (complete in the provided form):
+We're going to learn more about event notification APIs by diving in to `libuv` or the `demikernel` API.
+You should choose *one* of these systems to dive into.
+The intention is that your group will have people to cover both APIs.
+These are both systems that handle concurrency in different ways.
+`libuv` is the library underlying `node.js` and exposes a callback model to C code.
+It is cross-platform and we can focus mainly on the POSIX/Linux part of it.
+The `demikernel` (DK) is a "library operating system" that avoids isolation, and instead provides a programming model much loser to the raw devices.
 
-- TBD
+Questions for `libuv` (complete in the provided form):
+
+1. What APIs are necessary for a client to read from a network socket?
+2. What Linux system calls are used for event multiplexing (which functions are they called from)?
+
+Question for DK:
+
+1. What APIs does the DK use to issue requests, and get notified when there is an event?
+	What APIs does can a client use to "block" awaiting events?
+2. DK does not *actually* block.
+	Provide evidence of this.
+	Why do you think this is?
 
 References:
 
-- [TBD](TBD).
-	Starting point help: TBD.
+- [libuv](https://github.com/libuv/libuv).
+
+	- Starting out by perusing the [tests](https://github.com/gwu-cs-advos/libuv/tree/v1.x/test) will give you a lot of context to dive in.
+
+- Demikernel:
+
+	- [Demikernel -- see Fig 3](https://irenezhang.net/papers/demikernel-hotos19.pdf) abstractions and API.
+	- [API](https://github.com/gwu-cs-advos/demikernel/blob/master/API.md) documentation
 
 ## L3:
 

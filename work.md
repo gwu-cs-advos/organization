@@ -87,7 +87,7 @@ References:
 
 - [libuv](https://github.com/libuv/libuv).
 
-	- Starting out by perusing the [tests](https://github.com/gwu-cs-advos/libuv/tree/v1.x/test) will give you a lot of context to dive in.
+	- Starting out by perusing the [tests](https://github.com/libuv/libuv/tree/v1.x/test) will give you a lot of context to dive in.
 
 - Demikernel:
 

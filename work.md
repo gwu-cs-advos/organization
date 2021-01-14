@@ -71,16 +71,26 @@ References:
 		You can start by understanding what calls are blocking, and which are non-blocking, then move on to how the zircon notion of *signalling* is tied to events.
 	- Some of the [conventions](https://fuchsia.dev/fuchsia-src/concepts/api/system) make digesting the documentation easier.
 
-## L2:
+## L2: Interface Properties
+
+Today we're going to understand a number of properties of interfaces that we can use to understand what differentiates good interfaces, from those that are more difficult to use.
+Keep in mind that there are no perfect interfaces out there, so all of this should be taken as a modus operandi.
+Watch the [lecture](TBD) and answer the questions below.
 
 Questions (complete in the provided form):
 
-- TBD
+1. Provide at least one example of code you've seen or written that is a good example of some of these properties (either expressing these properties well, or not well).
+2. Explain why locks don't compose.
+	Does this mean that we should not use locks?
+3. File `mmap` and `read`/`write`/`lseek` are not orthogonal.
+	They both enable the user to modify file contents.
+	`mmap` came after the other file access functions.
+	Why do you think adding `mmap` was worth it over concerns of orthogonality?
 
 References:
 
 - Lecture [video](TBD).
-- See Section on "" in the book.
+- See Section on "Interface Design Properties" in the book.
 
 ## C2: Concurrency on Servers
 
@@ -95,14 +105,17 @@ The `demikernel` (DK) is a "library operating system" that avoids isolation, and
 Questions for `libuv` (complete in the provided form):
 
 1. What APIs are necessary for a client to read from a network socket?
-2. What Linux system calls are used for event multiplexing (which functions are they called from)?
+	Tests are likely going to be quite helpful for this.
+2. What Linux system calls are used for event multiplexing (which functions are they called from, where in code, etc...)?
+	You need to be specific here, thus dive deep into the code.
 
 Question for DK:
 
 1. What APIs does the DK use to issue requests, and get notified when there is an event?
 	What APIs does can a client use to "block" awaiting events?
-2. DK does not *actually* block.
-	Provide evidence of this.
+2. DK does not *actually* block (despite having APIs labeled as blocking).
+	I define blocking as "being removed from the scheduler runqueue to allow other threads to execute".
+	Provide evidence of this in the code.
 	Why do you think this is?
 
 References:

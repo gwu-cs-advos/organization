@@ -75,21 +75,21 @@ References:
 
 Today we're going to understand a number of properties of interfaces that we can use to understand what differentiates good interfaces, from those that are more difficult to use.
 Keep in mind that there are no perfect interfaces out there, so all of this should be taken as a modus operandi.
-Watch the [lecture](TBD) and answer the questions below.
+Watch the [lecture](https://youtu.be/mKJcqvozfA8) and answer the questions below (remember: the form is linked from Piazza).
 
 Questions (complete in the provided form):
 
-1. Provide at least one example of code you've seen or written that is a good example of some of these properties (either expressing these properties well, or not well).
-2. Explain why locks don't compose.
+1. Explain why locks don't compose.
 	Does this mean that we should not use locks?
-3. File `mmap` and `read`/`write`/`lseek` are not orthogonal.
+2. File `mmap` and `read`/`write`/`lseek` are not orthogonal.
 	They both enable the user to modify file contents.
 	`mmap` came after the other file access functions.
 	Why do you think adding `mmap` was worth it over concerns of orthogonality?
+3. Provide at least one example of code you've seen or written that is a good example of some of these properties (either expressing these properties well, or not well).
 
 References:
 
-- Lecture [video](TBD).
+- Lecture [video](https://youtu.be/mKJcqvozfA8).
 - See Section on "Interface Design Properties" in the book.
 
 ## C2: Concurrency on Servers

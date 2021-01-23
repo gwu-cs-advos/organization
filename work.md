@@ -111,7 +111,7 @@ Questions for `libuv` (complete in the provided form):
 
 Question for DK:
 
-1. What APIs does the DK use to issue requests, and get notified when there is an event?
+1. What APIs does the DK use to issue requests to send or receive data, and get notified when there is an event?
 	What APIs does can a client use to "block" awaiting events?
 2. DK does not *actually* block (despite having APIs labeled as blocking).
 	I define blocking as "being removed from the scheduler runqueue to allow other threads to execute".

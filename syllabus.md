@@ -11,7 +11,7 @@ Note that you should reference/read/complete the work in "resources & work" at l
 | T1.19 | Zircon APIs and Documentation                                    | [C1](./work.md#c1-reading-documentation-event-management-and-zircon) |
 | R1.21 | Design II: Interface Properties                                  | [L2](./work.md)                                                      |
 | T1.26 | Concurrency and Orthogonality: `libuv`, `demikernel`, and Patina | [C2](./work.md#c2-concurrency-on-servers)                            |
-| R1.28 | Capability-based OS I: Kernel APIs and Abstractions              | [L3](./work.md)                                                      |
+| R1.28 | Capability-based OS I: Kernel APIs and Abstractions              | [L3](./work.md#l3-capability-based-os-design-i)                      |
 | T2.02 | Layering in Composite                                            | [C3](./work.md)                                                      |
 | R2.04 | UNIX Design & Philosophy                                         | [L4](./work.md)                                                      |
 | T2.09 | VFS Design in `xv6`, plan 9, and Linux                           | [C3](./work.md)                                                      |

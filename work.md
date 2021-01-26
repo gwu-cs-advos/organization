@@ -129,16 +129,24 @@ References:
 	- [Demikernel -- see Fig 3](https://irenezhang.net/papers/demikernel-hotos19.pdf) abstractions and API.
 	- [API](https://github.com/gwu-cs-advos/demikernel/blob/master/API.md) documentation
 
-## L3:
+## L3: Capability Based OS Design I
+
+Today we'll briefly play a mind game: What can we do to nearly minimally abstract hardware resources into a useable set of abstractions with which to build modular systems?
+Watch the video, and answer the following questions.
+I highly recommend that you read the chapter (in references) in the book.
+It includes many definitions and more specific discussions to be more concrete than the recording.
+There's also a fun analogy with high-performance jets.
 
 Questions (complete in the provided form):
 
-- TBD
+1. Where does a semantic gap exist in the discussed resources? 
+    What would the system have a hard time doing?
+2. What are the downsides of this design? 
 
 References:
 
-- Lecture [video](TBD).
-- See Section on "" in the book.
+- Lecture [video](https://youtu.be/aWHZaYwWRTM).
+- See Section on "Example OS Design: Composite" in the book.
 
 ## C3:
 

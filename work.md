@@ -139,27 +139,46 @@ There's also a fun analogy with high-performance jets.
 
 Questions (complete in the provided form):
 
-1. Where does a semantic gap exist in the discussed resources? 
+1. Where does a semantic gap exist between the abstractions provided by the discussed resources and some set of higher-level requirements?
     What would the system have a hard time doing?
-2. What are the downsides of this design? 
+2. What are the downsides of this design?
 
 References:
 
 - Lecture [video](https://youtu.be/aWHZaYwWRTM).
 - See Section on "Example OS Design: Composite" in the book.
 
-## C3:
+## C3: Composite Runtime
+
+Lets dive into what the code looks like to actually create, modify, and use the kernel resources discussed in the previous video.
+We're going to dive into the API for allocating and using those resources.
+Your first project will use this API to implement the core of an RTOS, so time that you put into it now will pay off later.
 
 Questions (complete in the provided form):
 
-- TBD
+- Does this API create processes (i.e. components) in a manner closer to `posix_spawn` and `CreateProcessA`, or closer to `fork`?
+- Can you summarize tersely why there are so many thread and "receive" APIs (see below what the `rcv` resources are)?
+- What API enables the creation of shared memory?
 
-References:
+References and hints:
 
-- [TBD](TBD).
-	Starting point help: TBD.
+- The [Composite Runtime](https://github.com/gwsystems/composite/tree/loader/src/components/lib/crt) (`crt`) attempts to provide a usable API to program the discussed resources.
+	The names aren't always consistent with the video.
+	A mapping:
+
+	- *asynchronous activation endpoints* have a `rcv` that threads can suspend upon, and an `asnd` which other threads (and interrupts) can use to activate the thread associated with the `rcv`.
+	- *synchronous invocation call-gate* are `sinv` (synchronous invocation) and `sret` (synchronous return).
+
+- For now, I'd ignore the blockpoint, lock, and channel support.
+- The system's documentation might be a good place to start (particularly sections 1.3 and 2 in the [dev manual](https://github.com/gwsystems/composite/blob/loader/doc/dev_manual/composite_dev_manual_v2020-07-04.pdf)), but the book for this class (especially the chapter "Example OS Design: Composite") covers the abstractions in a lot more detail.
+- The API is best documented in [crt.c](https://github.com/gwsystems/composite/tree/loader/src/components/lib/crt/crt.c), and an example of its use can be seen in the system [constructor](https://github.com/gwsystems/composite/blob/loader/src/components/implementation/no_interface/llbooter/llbooter.c).
+- You will *not* be able to understand the `cos_kernel_api` nor `cos_defkernel_api` APIs with the information you have, currently -- the resource table construction and retyping is confusing.
+	You'll learn about this in L4.
+	For now, view them as a wrapper around the kernel system call API that handle resource table allocation.
 
 ## L4:
+
+Diving deeper into microkernel construction, lets address *why* you want to have simple user-level abstractions to compose protection and access hardware.
 
 Questions (complete in the provided form):
 
@@ -174,7 +193,8 @@ References:
 
 Questions (complete in the provided form):
 
-- TBD
+- Check out the [constructor](https://github.com/gwsystems/composite/blob/loader/src/components/implementation/no_interface/llbooter/llbooter.c) (whose job is to create the other system components).
+	What's your hypothesis for what the `args_*` API is all about?
 
 References:
 
@@ -367,3 +387,47 @@ References:
 
 - Lecture [video](TBD).
 - See Section on "" in the book.
+
+# Homeworks
+
+IoT systems are increasingly popular.
+Many of them forego security and isolation for simplicity.
+Lets build a secure RTOS to control the physical world in a trustworthy manner!
+
+The *final* product will have the following features:
+
+- Multithreaded with communication and synchronization mechanisms between threads including
+
+	- thread creation and prioritization
+	- `go`-like channels
+	- locks for critical sections
+
+- An isolation-providing process-based abstraction for applications
+
+- A nameserver that enables processes to
+
+As we're implementing about an RTOS, we should keep it as simple as possible, avoid generalizations, and avoid dynamic memory allocation.
+
+## RTOS
+
+Lets start by creating the core services for a RTOS in a *single protection domain* (i.e. in a single component).
+These services include:
+
+1. threads,
+2. preemptive, priority-based scheduling,
+3. timers so that threads can block for periods of time,
+4. blocking locks (not spinlocks), and
+5. channels to pass data from a producer to a consumer.
+
+## RTOS + Application Isolation
+
+Application threads should be in a separate protection domain than the core RTOS.
+They will use synchronous invocations to communicate with and make requests from the RTOS component.
+We'll make a simplifying assumption that only a single application thread executes in the application's component (i.e. that they are single-threaded).
+To communicate with the RTOS component, this requires that we set up shared memory between the application and the RTOS to pass arguments, and get return values.
+
+## Extensibility
+
+Lastly, we're going to enable applications to register themselves as the providers of specific services in a namespace.
+Implement a simple hierarchical namespace that applications can register themselves in, and other applications can "open" to communicate via channels with the service.
+This will enable the system to be extended with functionality and services as applications "hook themselves in" to the shared namespace.

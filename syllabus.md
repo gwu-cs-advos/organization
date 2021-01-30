@@ -1,4 +1,4 @@
-# Syllabus
+k# Syllabus
 
 ## Calendar
 
@@ -12,11 +12,11 @@ Note that you should reference/read/complete the work in "resources & work" at l
 | R1.21 | Design II: Interface Properties             | [L2](./work.md#l2-interface-properties)                              |
 | T1.26 | Concurrency: `libuv`, `demikernel`          | [C2](./work.md#c2-concurrency-on-servers)                            |
 | R1.28 | Capability-based OS I: Kernel Resources     | [L3](./work.md#l3-capability-based-os-design-i)                      |
-| T2.02 | Layering in Composite & Patina              | [C3](./work.md)                                                      |
-| R2.04 | UNIX Design & Philosophy                    | [L4](./work.md)                                                      |
-| T2.09 | VFS Design in `xv6`, plan 9, and Linux      | [C3](./work.md)                                                      |
-| R2.11 | Capability-based OS II: System Construction | [L5](./work.md)                                                      |
-| T2.16 | Multi-component Systems and Scheduling      | [C4](./work.md)                                                      |
+| T2.02 | Resource manipulation in Composite          | [C3](./work.md#c3-composite-runtime)                                 |
+| R2.04 | Capability-based OS II: System Construction | [L4](./work.md)                                                      |
+| T2.09 | Multi-component Systems and Scheduling      | [C3](./work.md)                                                      |
+| R2.11 | UNIX Design & Philosophy                    | [L5](./work.md)                                                      |
+| T2.16 | VFS Design in `xv6`, plan 9, and Linux      | [C4](./work.md)                                                      |
 | R2.18 | Design focused on middleware/libraries      | [L6](./work.md)                                                      |
 | T2.23 |                                             | [C5](./work.md)                                                      |
 | R2.25 | Plan 9 Design & Philosophy                  | [L7](./work.md)                                                      |

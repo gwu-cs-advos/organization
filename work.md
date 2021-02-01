@@ -176,18 +176,25 @@ References and hints:
 	You'll learn about this in L4.
 	For now, view them as a wrapper around the kernel system call API that handle resource table allocation.
 
-## L4:
+## L4: Capability Delegation and Revocation
 
 Diving deeper into microkernel construction, lets address *why* you want to have simple user-level abstractions to compose protection and access hardware.
+We need to enable complex systems to be built from various levels of mechanism and policy composed into higher-level abstractions.
+This requires programmatically being able to define the subsets of resources that each module should have access to.
+Fundamental to this in capability-based systems is the notion of how resources can be made accessible (the capability delegated) to other modules, and how they can later be revoked.
 
 Questions (complete in the provided form):
 
-- TBD
+1. Why is delegation necessary?
+2. What are the trade-offs with revocation being recursive (as presented), or simply making revocation only remove the specific delegated capability (not none of the delegations made from there)?
+
+Please focus on spending time providing good questions for this lecture.
+I want the feedback to understand where confusions exist.
 
 References:
 
-- Lecture [video](TBD).
-- See Section on "" in the book.
+- Lecture [video](https://youtu.be/krvJS01IrXE).
+- See Section on "Capability-based Protection and Delegation and Revocation" and "Component-based Design on Composite" in the book.
 
 ## C4:
 

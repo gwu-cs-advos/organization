@@ -196,28 +196,39 @@ References:
 - Lecture [video](https://youtu.be/krvJS01IrXE).
 - See Section on "Capability-based Protection and Delegation and Revocation" and "Component-based Design on Composite" in the book.
 
-## C4:
+## C4: Using the `crt` for System Construction
+
+Read through:
+
+- the [constructor](https://github.com/gwsystems/composite/blob/loader/src/components/implementation/no_interface/llbooter/llbooter.c) (whose job is to create the other system components), and
+- the [capability manager](https://github.com/gwsystems/composite/blob/loader/src/components/implementation/capmgr/simple/capmgr.c).
+
+These are the main users of the `crt` library as they manage the capability tables of themselves, and of other components.
+There are a lot of rabbit holes to go down here.
+Remember, three hours is enough ;-)
 
 Questions (complete in the provided form):
 
-- Check out the [constructor](https://github.com/gwsystems/composite/blob/loader/src/components/implementation/no_interface/llbooter/llbooter.c) (whose job is to create the other system components).
-	What's your hypothesis for what the `args_*` API is all about?
+- What's your hypothesis for what the `args_*` API is all about?
+	You will **not** be able to have 100% certainty about this.
+- Tersely describe (in as high of terms as possible) what the loader is doing, step by step.
+- What aspects of the capability manager don't match your mental model (following class discussion) about what you'd expect the capability manager to do?
 
-References:
+## L5: User-level Management of Kernel Memory
 
-- [TBD](TBD).
-	Starting point help: TBD.
-
-## L5:
-
+Finally, we'll address the question, "how do we allocate kernel data-structures, and control the access rights to the system's memory"?
+The mechanisms behind this are highly unintuitive, and very clever.
+Lets dive into memory retyping and the user-level management of kernel memory.
 Questions (complete in the provided form):
 
-- TBD
+1. Summarize the motivations for the discussed design?
+	Why not use a more conventional approach?
+2. Summarize your understanding of why kernel integrity is ensured using the discussed design.
 
 References:
 
-- Lecture [video](TBD).
-- See Section on "" in the book.
+- Lecture [video](https://www.youtube.com/watch?v=b1ARRd3b8dY).
+- See Section on "Memory Management" in the book.
 
 ## C5:
 

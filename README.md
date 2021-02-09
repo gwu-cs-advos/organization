@@ -24,7 +24,7 @@ If you can effectively read C code, but still feel a little shakey with the lang
 
 The "book" for this class includes
 
-1. [lectures](https://youtube.com/playlist?list=PLVW70f0xtTUwPxQXXcQBZJps-7n8BclOc) for the class,
+1. [lectures](https://youtube.com/playlist?list=PLVW70f0xtTUwPxQXXcQBZJps-7n8BclOc) for the class and some notes about each [lecture's discussion](./lectures.md),
 2. an [outline "book"](https://github.com/gwu-cs-advos/advos_book) of the material for the class, with many references,
 1. background concepts can be learned using the [lectures](https://www.youtube.com/playlist?list=PLVW70f0xtTUxHXRtZhGEJAiBDFx-ofc_G) for the undergraduate OS class,
 2. the FAQ book for the undergraduate OS class, which will be expanded in this class, and

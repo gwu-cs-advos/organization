@@ -1,0 +1,443 @@
+# L1
+
+1. Office hours R2-3, F9-10
+2. Grades on L1
+3. Some replies are too long
+4. Examples of significant insight:
+
+	- Your view in the video was to start with a specific goal, and not to abstract or over-generalize excessively. Is there a good way to find the balance between scoping and reducing redundancy? For example, if I scope too small, it could take me twice as long to re-implement a service to incorporate multiple children. However, if I'd started out assuming this service would need to be extended in the future, I could save time, but possibly build up extended accidental complexity/debt.
+	- It is odd to think that abstractions actually limit power; however, this limiting often reduces the time and skill it takes a developer to use a resource and provides protection from unwanted events. In some sense, the abstraction gives more power to those who understand the higher-level system, but not the lower-level system. Additionally, you are given the power to use a resource without having to worry about possible negative effects.
+	- We generally associate power with more control and at first that is counterintuitive because abstractions adds constraints to lower level interfaces and takes away power from the user but looking closely abstractions does make it much easier to deal with the system and not think about the lower level implementations and that makes abstractions powerful. For example a file system module already takes care of the most efficient way of handling bytes of data that the user does not have to think about and can simply read and write the data.
+
+5. Questions:
+
+	- Discuss technical debt, avoiding it, and its properties.
+	- Abstraction takes away power to use resources in specific manners.
+		How would you design a multi-user system to maximally provide power to software?
+		What are the trade-offs here?
+
+6. Discussion:
+
+	- Graph on development velocity and technical debt
+	- Can't we design-away technical debt (can't know all problems, new problems arrive dynamically)
+		Take away: we are bad at predicting what's necessary in a year.
+	- Doesn't the generality pay off in the end?
+		What you pay now will reduce complexity later?
+	- Understanding of constraining complexity, thus power.
+		Abstractions remove potential.
+		Possible to implement system that can be used for most anything?
+		What would this require?
+	- Layered/Hierarchical/DAG: which is good when?
+	- Languages and modularity, accidental complexity, and semantic gap -- C for applications, Java for kernel.
+
+# C1
+
+- System vs. application: define vs. use APIs.
+	Libraries complicate this: define resources *and* multiplex them vs. define them
+	System: 1. no shared pointers, and 2. persistence thus naming
+- Is Zircon an event-driven system?
+	Does it require its applications to be written in an event-driven manner?
+
+## Understanding the API
+
+- Event sources go beyond the event API `zx_event|eventpair_create`, and include [processes](https://fuchsia.dev/fuchsia-src/reference/syscalls/process_create) (e.g. "Process handles may be waited on and will assert the signal ZX_PROCESS_TERMINATED when the process exits."), threads, etc...
+
+	- How about `futex`es?
+	- How about `channel`s?
+	- event sources? (channels, process termination, interrupts)
+	- not just `zx_event*`
+
+- What is the difference between `zx_object_signal` and `zx_object_signal_peer`?
+- `zx_object_wait_many` vs. [`zx_port_wait()`](https://fuchsia.dev/fuchsia-src/reference/kernel_objects/port)?
+	How is `zx_port_wait` setup and why?
+	Why does it use `zx_object_wait_async` to setup instead of the normal synchronous version?
+- There is a timeout as an argument to `zx_object_wait_many`; does this feel "wrong" in any way?
+- Is there a way to block until all of a set of *multiple* events have arrived?
+	Why or why not?
+
+## The UNIX comparison
+
+- UNIX: timers, signals, process termination, *and* fds.
+	Linux extends with `timerfd_create`, `signalfd`, process fds (`pidfd_open`).
+	Comment on these APIs.
+
+# L2
+
+## Assess the following APIs
+
+- `fork` composes with threads (i.e. is it thread-safe), buffered I/O (see `fflush`)?
+
+	- vs. `posix_spawn`/`CreateProcess`
+	- benefits of `fork`?
+
+- What if we only had `mmap`, not `read`/`write`?
+
+	- What benefits would there be?
+	- What about network sockets?
+		Pipes?
+	- A downside is that files that *grow* could be tedious to access.
+		How could we use the current `mmap` when files can grow?
+		If we changed `mmap` to transparently increase the mapped region as files grow, would this be a "good" API?
+
+## Discussion
+
+Organization:
+
+- How insightful do all questions have to be?
+- Questions as a guide first, evaluation second.
+- demikernel vs. libuv
+
+Questions:
+
+- `fork`
+
+	- threads
+	- double output with buffered
+	- benefit: trivial inheritance of resources! (if you want them to inherit most resources)
+
+- `mmap`
+
+	- shared memory for all!
+			Requires locks.
+			But you kinda need to worry about concurrent `write`s as well (but FS can implement critical sections for modifications for each single write)
+	- use of `truncate`
+	- `mmap` does not support polymorphism in the same way: `read`/`write` vs. `load`/`store`
+	- What if everything was mapped as a DMA-like ring buffer?
+			See Demikernel for Tuesday!
+
+Clarifications:
+
+- What are the benefits of orthogonality?
+	When might we want to trade it away?
+	What metrics do we use to make that decision?
+- composition = `tranfer() {inc(); dec()}`, not defining a new `transfer`
+- commutativity for open and the importance of specifications, and a mapping to scalable implementations
+
+## Questions
+
+- When balancing complexity and interface simplicity, does performance always win out?
+	Do we have to live with the resulting complexity?
+- Which of these aspects of interface design do we prioritize if we're on a deadline, and can't do it all?
+- Is idempotency equivalent to deterministic functions in math?
+	No.
+	Deterministic functions (if I understand the referenced concept) return output based solely on the input.
+	These are *pure* functions or (as I said in the lecture) "stateless".
+	Idempotent functions can have output based on "hidden" state (think, a cache, a disk, etc...).
+	If some of those operations can *change* the state, then another otherwise idempotent functions retrieve that state, the retrieval functions are not idempotent with respect to the update operations.
+	However, the retrieval and update operations are likely idempotent with respect to themselves.
+	A simplistic (and common) view on idempotency ignores the relationship of these functions to each other.
+- Which functions actually *are* re-entrant?
+	`strtok_r` stores the state in the arguments passed in, thus will execute re-entrantly for different sets of arguments; similar arguments apply to many of the `str*` class of `string.h` functions; and, generally, any API that depend only on arguments to compute the results.
+	Careful implementation in stateful functions can also be re-entrant, but this requires a lot of consideration and work; most modern libraries don't consider this, and instead require that signal handlers are simple and restricted in scope.
+- Are there mechanisms to avoid breaking orthogonality?
+	Not that I know of.
+	That's why we're discussing it in the class: if you're aware of the goals, you can consider them in interface creation.
+	If you break then, then you can do so intentionally, and document why.
+- How can `open` not commute -- two calls, regardless the order seem identical for all functionality that matters, right?
+	For a user's perspective, it *feels* like they are identical.
+	From a shell's perspective, they are *not*.
+	For example, `sh` in `xv6` *requires* that the order of opens translates into *specific* file descriptors being allocated (see the [careful dance](https://github.com/gwu-cs-os/gwu-xv6/blob/master/sh.c#L100-L112) with `close` and `dup` when creating pipes).
+	More importantly, the *specification* of how *open* and *dup* behave is what we assess when judging commutativity.
+	Human perceived importance of various behaviors in APIs are not very relevant, only the specification.
+	POSIX's *specification* requiring allocation of the lowest-free file descriptor ensures that two `open` (or `dup`) calls do *not* commute.
+	This means that an implementation that adheres to this specification cannot be scalable.
+	This hopefully emphasizes why the *specification*, not a *sense* about what part of APIs are important, is the relevant detail to focus on.
+- Is it possible to have a thread-safe function be re-entrant?
+	Yes.
+	A few examples (I'm sure there are more, but these are the ones that popped into my head):
+
+	1. You can use recursive/re-entrant locks (see the book), and track if your own thread is already processing in a critical section, and figure out some way to proceed without touching the shared structures (e.g. return some failure mode).
+	2. You can use wait-free algorithms that only use atomic instructions, and avoid `cas` loops, thus can proceed in the signal handler regardless where the preemption happened in the main thread's execution.
+- The less our design leverages global state, the better?
+	Generally, yes.
+	It is much easier to test, and implement functions that are isolated from the effects of other functions -- in some sense, avoiding global state massively increases compositionality.
+	However, it is impossible to provide many system services with this property.
+	We always have some global structures as they track the state of system resources.
+- Is there a general way to create composable APIs for shared resources?
+	Not that I know of.
+	A common technique, if we can call it that, is to make the API more complicated to handle changes that span multiple API calls.
+	They are conceptually similar to the `cas` atomic instructions:
+
+	1. one of the API functions returns a "token" that records the state of the system,
+	2. each subsequent call takes that token, and will make modifications contingent on not conflicting with other parallel modifications.
+
+	The general idea is to "make modifications only if the state is as expected", and this is a composable function that can be tied together into higher-level operations.
+	Many web caches provide an API to set a key to a value *only if* the value was previously some specific value.
+	This is similar and generalized to [Optimistic Concurrency Control (OCC)](https://en.wikipedia.org/wiki/Optimistic_concurrency_control) in data-bases.
+
+	An additional technique is to provide a "token" as part of the API that specifies which "portion" of the backing state is being modified and queried.
+	A good example of this is [session tokens](https://en.wikipedia.org/wiki/Session_(computer_science)) that are used to identify a specific user that is interacting with a webpage over multiple requests (think the "paging" required by the "next" links to query subsequent data items).
+
+	[Software transactional memory](https://en.wikipedia.org/wiki/Software_transactional_memory) (STM) in Haskell/Clojure implements APIs essentially based on the "make modifications only if state is as expected", and are able to hide the complexity of the API behind a coherent library abstraction.
+	They both rely on the functional behavior of the underlying system to make this practical, thus this technique is not generally applicable to systems -- that are *not* functional (e.g. stateless or pure).
+
+	However, these are examples.
+	I don't know of any general -- or prescribed -- techniques to create composable APIs.
+- Should we always choose performance over the "nice-to-have" interface properties?
+	No.
+	We often design systems and ask "what operations *must* be fast".
+	We define a "fast-path" in the system (or multiple), and focus optimizations around that.
+	Once we do that, we want to make the API as easy to use as possible in general, and depart from that ease of use to make the fast-path efficient.
+	Linux doesn't really have this luxury as the "fast paths" differ across the vast number of applications.
+	However, most systems that we implement are much more specialized, and do have the luxury to be more opinionated about what we optimize for.
+- Do we ever remove API functions in systems -- for example, system calls in Linux?
+	Not really.
+	Certainly Linux doesn't remove system calls.
+	So long as there are users of the API, to remove it you have to either 1. be willing to break existing applications (see Python's transition to 3.0), or 2. provide a reasonable transition plan to support the old functions in libraries (e.g. support the old APIs in a library by using underlying composable APIs of the other functions of the interface).
+- Is the API composable if some of the functions, or the resources in state, can compose, but others cannot?
+	Within a given API, the composability constraints can be documented.
+	We often define a protocol (or state-machine) which can define the state of the resources being modified, and only specific functions can apply to resources in specific states.
+	There is an inherent protocol in networking connection creation that flows through `socket`, `bind`, `listen`, `accept`, and `read`.
+	These functions are *not* arbitrarily composable, instead they can only operate on a resource (the socket) when it is in a specific state (as defined by the previous functions used to operate on it).
+
+	That said, we often worry more about the composability of different APIs together.
+	Does `fork` compose with `pthread`s?
+	Do `pthread`s compose with `errno`?
+	Do signals compose with blocking ("long") system calls?
+	No, no, and no.
+	We must focus not only on "self composability" (and document constraints on that), but also on the composability of different, potentially "interfering" with each -- demonstrating a lack of composability.
+- With respect to liveness: if a user opens a file, thus in some sense owns the reference to the file, and is responsible for `close`ing it, what happens if the user doesn't?
+	The reference will stick around!!!
+	When a process `exit`s, all of its referenced are cleaned up, and at that point the file will be released (and potentially freed if all other references are removed from it).
+	There is a very deep, worrisome problem here: we are using up kernel resources (memory and potentially disk) to store the file.
+	Are we "charging" (i.e. *accounting* for) those resources properly?
+	Are they counted against the total amount of memory/disk that the process/user is using?
+	This is a very difficult problem to solve.
+	To make proper resource *allocation* decisions, we often want to consider how much of a resource some user/process is already using, and allocate more to those that are using fewer (as an example policy).
+	Without proper accounting, a potential attack is opened up where the user can use many more resources than it should be able to by consuming service's resources on their behalf.
+	This is made all the more complicated when those resources are "shared" between processes.
+	Do we proportionally "charge" each process?
+	If so, one process removing a reference will *increase* the amount that others are charged.
+	This is odd: your resource consumption accounting goes *up* through no action of your own.
+	Hard stuff.
+
+# C2: event management
+
+Demikernel:
+
+- DK doesn't use separate address spaces.
+	Why do you think that it identifies queues with *handle* (an `int`), rather than a simple pointer to a typed structure?
+- Why does DK have a `dmtr_wait_all` function?
+	For what purpose is it used?
+- How deep did you dive into the `poll` implementation?
+
+libuv:
+
+-  Why shouldn't you use two event loops in the same thread?
+-  Why are there wrappers around many of what would just be directly libc calls?
+
+**Discuss the differences between event loops in libuv and DK**
+
+- for example, how does a callback model vs. a simple non-blocking model differ?
+
+**Subjects of wait**
+
+- libuv uses file descriptors as the subject of waiting/operations (similar to zircon)
+- DK uses individual data request operations (push/pop)
+
+What do you think are the implications of these decisions?
+
+**The impact of concurrency APIs on *liveness***
+
+- Discuss the implications of a simple and important difference in the libuv and DK apis:
+
+	Both APIs provide a means to *send* data:
+
+	- libuv assumes that when you are able to do a send/write, your data has is gone, perhaps queued in the kernel.
+	- DK requires that the buffer you're using to send be unmodified until later when the data is sent.
+
+	...another significant difference worth discussing is how they *receive* data:
+
+	- libuv recv/read APIs assume that you (as the client) must allocate memory for received data to be copied into.
+	- DK assumes that the data is returned from the pop APIs (via `dmtr_qresult_t.qr_value.sga`).
+
+# L3: Capability-based System Design
+
+- Why!?
+
+	- specialization
+	- simplicity
+	- fault tolerance
+	- security (concept: Trusted Computing Base)
+
+- Overheads: IPC (200-400 vs. 750 vs. 5000 cycles for Linux syscall vs. Composite sync inv vs. pipe round-trip, respectively)
+- Semantic gap:
+
+	- Large gap between higher-level required abstractions, and what is required -- certainly an issue here
+	- A misalignment between abstractions provide, and goals -- interrupt-level latency? syscalls vs. invocations?
+
+- Mechanism vs. policy
+
+	- Mechanism = resources as described
+	- Policy = which component should have access to which resources?
+		We must layer control and order on top of the discussed resources to derive predictable behavior.
+		See below for questions about what these policies should be for scheduling
+	- Example: lack of composition if we allow capability-based access from two components to the same thread.
+		How can a scheduler understand the thread's state?
+		Abstraction: only the scheduler should have access to the thread's capability.
+	- When implementing mechanism, the question is usually "can these mechanisms be orchestrated to create a useful system, and can we provide policies that ensure it is used only in that way?", rather than" are these mechanisms composable and safe on their own.
+		Inherently, the definition of *safety* is abstraction-specific.
+
+## Lecture Discussion
+
+Please record a list of *questions* you have when going through these mental exercises in the `#general` channel.
+I'll try and answer them there.
+
+- What are the benefits of constructing systems at user-level out of these low-level resources?
+- What are the trade-offs of system design using the discussed system abstractions, versus a monolithic system?
+- How much memory overhead would all of these resource take (guess)?
+	Is this a prohibitive amount?
+- With the synchronous invocations that use thread migration, in what ways are components (i.e. the client and server involved in the invocation) isolated?
+	In what ways are they not?
+
+### Specific design questions
+
+- How would higher-level abstractions such as files and a FS fit into this entire story?
+- When we receive an interrupt that gets translated through an asynchronous activation end-point to a thread activation, should we activate the thread immediately (thus preempting other existing threads)?
+	If we say "yes", what are the benefits and the downsides?
+	If we say "no", what are the benefits and the downsides, and how does the scheduler component know that the interrupt thread activated?
+- The lecture didn't discuss allocation and deallocation of resources.
+	How should we provide this functionality?
+	Should we allow any component to allocate and deallocate resources?
+- Should we allow every component to modify its own resource tables?
+	In what cases would it be OK, and in which cases would it not?
+- Design ways in which the system can control which components should have the ability to modify resource tables.
+	A feature of your design should be that so-privileged components could, for example, create shared memory, or "share" access to a the ability to dispatch to a thread (i.e. two capabilities in different capability tables to the same thread resource).
+
+# C3: `crt`
+
+1. Questions:
+
+	- Will any component in the system be able to use the `crt`?
+	- Is the functionality in the `crt` sufficient to implement an entire, general-purpose system?
+		Specifically, are the core abstractions provided by the `crt` sufficient to *compose* advanced systems on top of it?
+		If not, what's missing?
+	- Where is the scheduling in the system?
+
+2. Discuss confusions.
+
+	- Thread types (in comp, other comp, init, rcv)
+
+3. What goes into an RTOS?
+	Patina as example.
+4. Setting up the first homework.
+
+# L4: Access control to modifications
+
+- Why is the kernel a juicy target for compromises?
+
+	- What aspects of resource access make it an interesting target?
+	- Is the kernel the only juicy target?
+
+- sendmail appends provided emails (paths to files) to `/var/mail/wedu`.
+	It is a setuid program, so it executes as  the `wedu` user.
+
+	`sendmail /var/mail/wedu`
+	`cat /var/mail/wedu | sendmail`
+
+	`file_cap /myemail.ohnoes | sendmail`
+
+	- Goal: Principle of Least Privilege -- client should provide access to resource necessary for its requested operations
+
+- Is delegation mainly used to *share* a resource?
+
+    - Also for abstraction: provide abstractions/resources to other components...and you can only provide resources you have access to
+
+Example: System bootup
+
+- safety of access to restbls
+- Constructor, capmgr, sched
+- O(N) revocation in user-level
+
+Speed round:
+
+- With only a single scheduler, how does multi-core scheduling work?
+- How does moving a thread from a core onto another work?
+- How does permission to access a device work?
+	Is it a single capability?
+- Why are device drivers the most unreliable part of the OS, generally?
+- Why would we want a non-preemptive kernel?
+
+# C4: Constructor and Capability Manager
+
+- Why so much repeated functionality between constructor and
+  capability manager?
+
+    - They both use `crt` in different ways, but certainly both do perform some redundant operations.
+		These are redundant often because they need the access to the resources directly (to manage the resources), but that means that they must also provide abstractions/operations on those resources.
+
+- Structure of a booting system
+
+	```lisp
+	(kernel
+		(constructor (initargs (kv)
+			(tarball (
+				(capmgr (initargs (kv)))
+				(sched (initargs (kv)))
+				(ping (initargs (kv)))
+				(pong (initargs (kv))))
+			)
+		))
+	)
+	```
+
+- Which components are responsible for managing which resources?
+
+	*Constructor (`llbooter`):*
+
+	- Create each other component from their elf program
+	- Create the synchronous invocation call-gates
+	- Delegate access to resource tables based on PoLP for other
+      components
+	- Create initialization threads for "some" components (notably
+      `capmgr`), schedule them 1. by the initialization state machine,
+      and 2. FIFO.
+
+	*Capability Manager:*
+
+	- Create initialization threads for "some" components (notably
+      `sched`), schedule them 1. by the initialization state machine,
+      and 2. FIFO.
+	- Allocate resources (including threads). Note that this is
+      potentially overstepping the "capability-manager" bounds.
+	- Answer requests to delegate/revoke resources (tracking the
+      delegation tree).
+
+	*Scheduler:*
+
+	- Orchestrates initialization threads according to the state
+      machine, using the capmgr to allocate threads.
+	- Schedule threads based on its own policies (e.g. fixed priority
+      round-robin).
+
+- `initargs` details: kv vs. tarball?
+
+	- kv      = space efficient
+	- tarball = simple format for larger bulk indexing
+
+- Where are all of the revocation operations in the capability manager?
+	Well spotted!
+	Currently, the system is allocate only for the systems we're running, so those APIs aren't necessary.
+	However the `maps` data-structures are there to track the allocations for future revocations.
+	We aren't done implementing the system!
+- Why so many wrapper functions whose only job is to call other functions?
+	It is relatively common to separate client-facing APIs (with argument sanity checks), and internal APIs that might be focused on reusability.
+	Where the two APIs are relatively close in functionality, you might find a function that essentially only calls another function.
+	You might argue that you don't need the inner function.
+	In our case, we keep the separation between internal APIs, and client-facing to maintain code consistency.
+- Where is untyped memory accessed from?
+	The constructor has access to all untyped memory initially.
+	When it uses the `crt` APIs it will retype the memory to perform allocations.
+	After it creates all of the components, it will move the rest of the untyped memory into the capability manager for it to use for allocations, delegation, and revocation.
+- How are things like `cos_inv_token()` implemented?
+	What does it do?
+	Each synchronous invocation callgate has a trusted "token" that is passed into the server, and is set when we create the callgate.
+	By default, the token is set to the component id of the client invoking the callgate, thus enabling the server to have a trusted value telling it which component is asking for service.
+
+	The token, currently, is stored at the head of the execution stack.
+	Thus, if you look at `cos_inv_token()`, you'll notice that it magically finds the token at a fixed location on the stack.
+	It is placed at that location on the stack when the kernel starts executing into the server (the initial code executed in the server places it into that fixed location on the stack).
+	Similarly, the current thread id, and current core the thread is executing on are also placed in well-defined locations.
+
+- Which components are constructors?
+	Only the `llbooter`.

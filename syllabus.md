@@ -1,4 +1,4 @@
-k# Syllabus
+# Syllabus
 
 ## Calendar
 

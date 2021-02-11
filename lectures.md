@@ -441,3 +441,50 @@ Speed round:
 
 - Which components are constructors?
 	Only the `llbooter`.
+
+# L5: Memory Typing
+
+Questions:
+
+- Brainstorm ideas about how you might use kernel memory allocations in the kernel in Linux/OSX as a DoS on other principals/applications.
+- "Kernel decisions can inhibit user requirements"
+
+	- discuss what this means
+	- brainstorm some examples in which chosen kernel policies prevent some user-level goals from being implemented (remember: semantic gap)
+
+- The forest from the trees: We've discussed
+
+	- hardware resource abstraction into primitive kernel resources,
+	- capability-based access control to access those resources, delegate and revoke them, and generally orchestrate a component-based decomposition of the system, and
+	- how we allocate and manage memory using memory typing.
+
+    We've also seen some APIs for managing and using these abstractions.
+
+	Question: can you see how you might implement more complex systems from these primitives?
+	What's missing in your understanding to convince yourself that we could build, for example, POSIX out of components on the system?
+	Do you see how it is *possible* to implement an RTOS on the system?
+
+Lecture:
+
+- Typing basics:
+
+	- state machine
+	- operations on KM/UVM
+	- protecting KM -> protecting integrity of the kernel
+	- where are the refcnts?
+
+- Typing only tracks reference counts, what part of the system tracks if VM is used by a process, if it is shared, how to reclaim it when the process `exit`s, when we can reuse it, etc...
+- What part of the Composite code does all of the retyping, cons/decons, etc...?
+
+Clarifications:
+
+- Orthogonality and composability: remove allocation from kernel data-structure creation to allow it be separately 1. access controlled and allocated, and 2. used.
+- Where does all of the untyped memory come from?
+- System composition:
+	Constructor uses only the memory required to build up the system, and then passes the raw memory to capmgr.
+	Capmgr uses it as it seems fit.
+	Constructor that partitions memory between "VMs".
+- Can the kernel be starved of memory?
+	If an application is trying to create a thread, it should *provide the memory for creating that thread*.
+	The core of the memory retyping is that an application should verify it has *access to some memory* resource before *using it* -- a relatively intuitive notion.
+	Memory retyping simply takes this intuition and *also applies it to kernel allocations on behalf of the application*.

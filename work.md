@@ -230,27 +230,27 @@ References:
 - Lecture [video](https://www.youtube.com/watch?v=b1ARRd3b8dY).
 - See Section on "Memory Management" in the book.
 
-## C5:
+## C5: A Break!
+
+No questions, no code to be read!
+
+## L6: UNIX
+
+Lets dive into how existing systems approach providing abstractions for system resources.
+You are all at least familiar with the cosmetic aspects of UNIX, but this week we'll dive into more details.
+Read the chapter on UNIX (section 5.1 and all of its subsections) in the book.
+Sorry, no video this time!
 
 Questions (complete in the provided form):
 
-- TBD
+- When do you think that pipeline computation on bit-streams is useful?
+	When are typed interfaces useful?
+- If UNIX has all of the discussed problems, why do you think that it is so ubiquitous?
+	If none of these problems have prevented UNIX from being as useful as it has been, what do you think has been their negative impacts?
 
 References:
 
-- [TBD](TBD).
-	Starting point help: TBD.
-
-## L6:
-
-Questions (complete in the provided form):
-
-- TBD
-
-References:
-
-- Lecture [video](TBD).
-- See Section on "" in the book.
+- Chapter 5.1 on UNIX, and the associated links it provides.
 
 ## C6:
 

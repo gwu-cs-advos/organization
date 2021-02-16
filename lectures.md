@@ -488,3 +488,52 @@ Clarifications:
 	If an application is trying to create a thread, it should *provide the memory for creating that thread*.
 	The core of the memory retyping is that an application should verify it has *access to some memory* resource before *using it* -- a relatively intuitive notion.
 	Memory retyping simply takes this intuition and *also applies it to kernel allocations on behalf of the application*.
+
+# C5: No Homework
+
+Lecture: Capability-based systems, scheduling design, and UNIX orthogonality
+
+Summary of operations:
+
+- access control manipulation (retype, cons/decons, copy/rm)
+- memory management
+- control flow management (sinv, rcv/asnd)
+
+The `crt` is an example of mechanism composition into policy
+Lets look at orthogonality within the system:
+
+- memory allocation vs. using memory
+- using resources vs. managing resources
+- control flow vs. using resources * (too smart for me)
+
+There are some places that seem to show a lack of orthogonality, for example, in control flow management.
+
+- thread caps: dispatch -- thd cap -> activate associated thread
+- asnd caps: asynchronously activate a thread -- asnd cap -> activate associated thread, and alternatively, interrupt -> asnd cap -> activate associated interrupt thread
+- rcv cap: suspend thread -- rcv cap -> switch to scheduler thread -> wakeup
+- rcv cap (for scheduler): get suspension/activation event notifications -- rcv cap -> sched thread read out event if available
+
+To start diving into why this lack of orthogonality might exist, consider:
+
+- When we get an interrupt, how do we determine if we should activate the interrupt thread, or continue executing the interrupted thread?
+	We want to avoid context switching to the scheduler for every single interrupt.
+- If we do execute the interrupt thread, when should we switch back to the scheduling thread (the interrupt thread might go into an infinite loop)?
+
+Can you design a system (mechanisms) to solve one or more of these problems as efficiently as possible?
+
+UNIX background:
+
+- "Do one thing well"
+- Separation of mechanism and policy -- and move policy up to the user where possible (expert system)
+- Often designed around orthogonality
+
+	- pipeline specification: user / script
+	- pipeline composition: shell
+	- data movement and isolation: kernel
+	- resource access: kernel
+	- processing stages: programs
+
+- Another example: [x11 protocol](https://www.x.org/releases/X11R7.5/doc/x11proto/proto.pdf), for example see `ConfigureWindow` (page 21) that can change geometry of a window, and, separately, `CreateGC` (graphics context) (42) and `PutImage` (55) which update our own window
+
+	- window manager (compositing) vs. window contents
+	- interesting evolution in browsers: browser for compositing, data/content via html, data presentation via css

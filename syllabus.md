@@ -18,7 +18,7 @@ Note that you should reference/read/complete the work in "resources & work" at l
 | R2.11 | Capability-based OS III: User-level Memory Mgmt. | [L5](./work.md#l5-user-level-management-of-kernel-memory)            |
 | T2.16 | Day off!                                         | C5                                                                   |
 | R2.18 | UNIX Design & Philosophy                         | [L6](./work.md#l6-unix)                                              |
-| T2.23 | VFS Design in `xv6`, plan 9, and Linux           | [C6](./work.md)                                                      |
+| T2.23 | VFS Design in `xv6`, plan 9, and Linux           | [C6](./work.md#c6-vfs)                                               |
 | R2.25 | Design focused on middleware/libraries           | [L7](./work.md)                                                      |
 | T3.02 |                                                  | [C7](./work.md)                                                      |
 | R3.04 | Plan 9 Design & Philosophy                       | [L8](./work.md)                                                      |

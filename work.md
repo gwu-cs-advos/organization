@@ -252,16 +252,33 @@ References:
 
 - Chapter 5.1 on UNIX, and the associated links it provides.
 
-## C6:
+## C6: VFS
+
+The Virtual File System (VFS) layer is essential to enable the uniform access to system resources through a hierarchical file-system namespace.
+Today we're simply going to dive into the VFS implementation in various systems.
+Lets start out with the most complicated, Linux.
+Fair warning: you will *not* understand all of the VFS layer, all of the context in Linux, nor all of the implementation of a simple VFS module!
+Lets start with the Linux [VFS documentation](https://www.kernel.org/doc/html/latest/filesystems/vfs.html) and then dive into the VFS being used in the [ramfs](https://elixir.bootlin.com/linux/latest/source/fs/ramfs) (a "in-memory file system", i.e. one that does not actually use the disk at all).
+Compare that to the trivial VFS layer in `xv6`.
+Note that most xv6 system calls start with `sys_*`, and you can find those entrypoints  [here](https://github.com/gwu-cs-os/gwu-xv6/blob/master/sysfile.c).
 
 Questions (complete in the provided form):
 
-- TBD
+1. In the Linux example `ramfs`, where is the logic for `read` implemented (i.e. the code that executes that is specific to the `ramfs`)?
+	Where is the data copied from the `ramfs`'s data-structures to user-level?
+2. What is your idea about how control flows through the system to get to that `read` implementation?
+3. Where does `xv6` discriminate between pipes and files?
 
-References:
+Note that you will *not* be able to perfectly answer question 2.
+Please "cut yourself off" when you're at diminishing returns, or you've expended your time allocated to this.
 
-- [TBD](TBD).
-	Starting point help: TBD.
+A wild and crazy question that we'll discuss in class:
+Imagine that we replace `fork` and `exec` with `open`ing a file!
+If we open a binary (e.g. `/bin/ls`), instead of doing the traditional "open" operation, instead it will execute the program as a new process (i.e. instead of `open` $\to$ `exec`).
+In that case, perhaps `write`ing to the process' `fd` will feed into its `stdin`, and `read`ing from the `fd` will read from its `stdout`.
+Why might this be better than our current implementation?
+Why might this be worse than our current implementation?
+We'll discuss.
 
 ## L7:
 

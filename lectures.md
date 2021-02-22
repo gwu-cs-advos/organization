@@ -521,6 +521,8 @@ To start diving into why this lack of orthogonality might exist, consider:
 
 Can you design a system (mechanisms) to solve one or more of these problems as efficiently as possible?
 
+# L6: UNIX
+
 UNIX background:
 
 - "Do one thing well"
@@ -537,3 +539,87 @@ UNIX background:
 
 	- window manager (compositing) vs. window contents
 	- interesting evolution in browsers: browser for compositing, data/content via html, data presentation via css
+
+## FAQ
+
+- Given all the modern UNIXish innovations, could the creators have done a better job?
+	Maybe not.
+	That would have taken time and resources.
+	It was more valuable to get the idea out than to predict 50 years of development.
+- Can a program wait for multiple events in UNIX?
+	Only with the event multiplexing APIs like `select`, `poll`, and `epoll`.
+
+## Interaction between modules
+
+Multiple programming models.
+
+- Streaming of bitstreams
+
+	```c
+	while (1) {
+		data = read(input);
+		output = process(data);
+		write(output);
+	}
+	```
+
+	Note that we might think of "typed streams" as using json or a bit-wise encoding to organize the streamed data.
+	This would look a lot more like retrieving and processing tuples in a db.
+
+- Call-return
+
+	```c
+	client(...) {
+		output = server_fn(foo, bar, baz);
+		process(output);
+	}
+	```
+
+	```c
+	server_fn(a, b, c) {
+		return process(a, b, c)
+	}
+	```
+
+- Single module, distributed execution (Spark, Mapreduce)
+
+	```rust
+	output = stream
+		.map(|data| process(data))
+		.filter(|data| if w00t(data) Some(data) else None)
+		.reduce(|data, result| result + process(data));
+	```
+
+	Is converted into:
+
+	```rust
+	while (1) {
+		data = read(input);
+		output = [];
+		for d in data {
+			output.append(process(d));
+		}
+		write(output);
+	}
+
+	while (1) {
+		data = read(input);
+		output = [];
+		for d in data {
+			if w00t(data) {
+				output.append(d);
+			}
+		}
+		write(output);
+	}
+
+	while (1) {
+		data = read(input);
+		output = [];
+		for d in data {
+			output.append(process(d));
+		}
+		write(output);
+	}
+	```
+	Where each module can be deployed in a separate process.

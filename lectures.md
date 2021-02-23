@@ -540,6 +540,57 @@ UNIX background:
 	- window manager (compositing) vs. window contents
 	- interesting evolution in browsers: browser for compositing, data/content via html, data presentation via css
 
+# C6: VF
+
+- What is a ramfs?
+- How did you go about reading Linux code?
+- Polymorphism in C -- structs of function pointers
+- What was your experience like going through Linux code?
+	Versus going through xv6?
+
+## Linux (and any modern UNIX) concepts
+
+- Hierarchical FS of `inode`s
+
+	+ caching data `inode`, offset -> data
+	+ caching directory entries (path -> dentry)
+
+- Demand paging
+
+	+ memory access fault (page fault) -> map in inode data
+	+ "address space" operations
+
+100s of different file systems and "everything is a file" resources.
+
+## Linux VFS Layers
+
+![The layers in the VFS of Linux, including how they relate to the file descriptor table, inodes, the page cache, and demand-paging-based page-faults.](./resources/unix_vfs.png)
+
+- `fd` -> `struct file`-> `struct inode`
+- `open`ing a file/dir:
+
+	- mounted file systems w/ `struct inode`
+	- path -> `struct dentry` -> `struct inode`
+
+- page-fault -> `struct address_space`
+
+Each of these is polymorphic, thus contains a set of function pointers (`file_operations`, `inode_operations`, `address_space_operations`, etc...).
+
+## Pipes
+
+- Hypothesis about which of these layers/concepts must be involved in the `pipe` implementation?
+- Where would you start looking to understand how pipes are implemented?
+
+## In contrast: `xv6`
+
+No caches, no demand paging, no COW, only a few types of resources.
+
+Remember implementation goals:
+
+- keep it simple
+- avoid over-generalization
+- avoid optimization by default
+
 ## FAQ
 
 - Given all the modern UNIXish innovations, could the creators have done a better job?

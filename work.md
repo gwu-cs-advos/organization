@@ -280,16 +280,17 @@ Why might this be better than our current implementation?
 Why might this be worse than our current implementation?
 We'll discuss.
 
-## L7:
+## L7: Beyond UNIX
+
+Please read [section 5.2 of the book on UNIX Counterpoints](https://github.com/gwu-cs-advos/advos_book/blob/main/doc/c04_case_studies.md#unix-counterpoints).
+The question we're now approaching is how should we think about modern software development that seems to depart so far from the UNIX philosophy.
+As with everything in systems, you'll dive into the *trade-offs* to understand how to think about system design.
 
 Questions (complete in the provided form):
 
-- Lecture [video](TBD).
-- TBD
-
-References:
-
-- See Section on "" in the book.
+- Is Linux a microkernel now?
+	In what ways "yes", in what ways "no"?
+- What do you think the main trade-offs are between UNIX-style, user-composition of "do one thing well" modules, and the composition into monolithic application from many libraries and frameworks?
 
 ## C7:
 

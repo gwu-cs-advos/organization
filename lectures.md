@@ -591,86 +591,51 @@ Remember implementation goals:
 - avoid over-generalization
 - avoid optimization by default
 
-## FAQ
+# L7: Middleware/Frameworks
 
-- Given all the modern UNIXish innovations, could the creators have done a better job?
-	Maybe not.
-	That would have taken time and resources.
-	It was more valuable to get the idea out than to predict 50 years of development.
-- Can a program wait for multiple events in UNIX?
-	Only with the event multiplexing APIs like `select`, `poll`, and `epoll`.
+## Group Discussion
 
-## Interaction between modules
+- What is D-Bus?
+	What mechanisms does it provide?
+- Is Linux a microkernel?
 
-Multiple programming models.
+	- Evidence for: `systemd`, multi-process frameworks, user-level device drivers (USB, bluetooth), user-level file systems (FUSE)
+	- Evidence against: scheduling etc still in the kernel!
+		Yeah, but that's true in most microkernels as well.
 
-- Streaming of bitstreams
+- Are containers really worth it over VMs?
+- Does UNIX have a huge semantic gap?
+	Is this its core problem?
 
-	```c
-	while (1) {
-		data = read(input);
-		output = process(data);
-		write(output);
-	}
-	```
+## Modern development and UNIX.
 
-	Note that we might think of "typed streams" as using json or a bit-wise encoding to organize the streamed data.
-	This would look a lot more like retrieving and processing tuples in a db.
+Developer composition is the new and future normal.
+This is good -- it keeps us employed and with high salaries.
+Look to the libraries below (that you will design) for UNIX philosophies (separation of concerns = do one thing well, composability, orthogonality, and the separation of mechanism and policy).
 
-- Call-return
+Consider: I need X.
+How do?
+What system mechanisms (libraries, services, etc...) do you require?
+Does your application simply include all of these and run?
 
-	```c
-	client(...) {
-		output = server_fn(foo, bar, baz);
-		process(output);
-	}
-	```
+Yes?
+Great!
+Write your application and get on with life.
+This is common for "toy" applications; uncommon in the workplace.
 
-	```c
-	server_fn(a, b, c) {
-		return process(a, b, c)
-	}
-	```
+No?
+You need to implement libraries and services that abstract system resources.
+You need to manage system complexity and modularize.
+Two cases (with grey area in-between):
 
-- Single module, distributed execution (Spark, Mapreduce)
-
-	```rust
-	output = stream
-		.map(|data| process(data))
-		.filter(|data| if w00t(data) Some(data) else None)
-		.reduce(|data, result| result + process(data));
-	```
-
-	Is converted into:
-
-	```rust
-	while (1) {
-		data = read(input);
-		output = [];
-		for d in data {
-			output.append(process(d));
-		}
-		write(output);
-	}
-
-	while (1) {
-		data = read(input);
-		output = [];
-		for d in data {
-			if w00t(data) {
-				output.append(d);
-			}
-		}
-		write(output);
-	}
-
-	while (1) {
-		data = read(input);
-		output = [];
-		for d in data {
-			output.append(process(d));
-		}
-		write(output);
-	}
-	```
-	Where each module can be deployed in a separate process.
+1. You need to write a set of libraries that expose sets of resources, each defining policy for how to compose the existing system mechanisms.
+	What resources should they expose?
+	Are they orthogonal?
+	Are they composable?
+	Are they as simple as they can be?
+	In short, are you building composable building blocks following the separation of concerns?
+2. You need to write set of libraries and services that are multi-layered.
+	Some of the services/libraries depend on others.
+	This is often motivated by the fact that there is a large semantic gap to bridge, thus requires multiple layers of modules to get there.
+	Are you clear about what mechanisms are exposed by each?
+	Are you clear about how the mechanisms of lower levels are composed via policy?

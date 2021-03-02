@@ -613,7 +613,7 @@ Developer composition is the new and future normal.
 This is good -- it keeps us employed and with high salaries.
 Look to the libraries below (that you will design) for UNIX philosophies (separation of concerns = do one thing well, composability, orthogonality, and the separation of mechanism and policy).
 
-Consider: I need X.
+Consider: I need `X` (for some value of feature `X`).
 How do?
 What system mechanisms (libraries, services, etc...) do you require?
 Does your application simply include all of these and run?
@@ -639,3 +639,41 @@ Two cases (with grey area in-between):
 	This is often motivated by the fact that there is a large semantic gap to bridge, thus requires multiple layers of modules to get there.
 	Are you clear about what mechanisms are exposed by each?
 	Are you clear about how the mechanisms of lower levels are composed via policy?
+
+# C7: Resource Namespaces and Abstractions
+
+## Examples of Resource Access via Hierarchical Namespace (HN)
+
+- files/directories
+- named pipes
+- `/proc/*`
+- `/sys/*`
+
+## Mental exercises: System Calls -> Files
+
+Lets investigate what it would take to move some existing abstractions into the hierarchical namespace.
+Can we get rid of system calls like `fork`/`exec`, `shmmem`, and `socket`/`bind`/`accept`/`listen`/`connect`, and replace them with hierarchical namespace operations (using `read`/`write`/etc...)?
+Lets create a HNOS (Hierarchical Namespace OS)!
+
+- How about the network?
+	For example, which device to use to create a connection, which port to use, which IP address to connect to, etc...
+- Can we replace process creation and program loading/execution with operations on a hierarchical namespace?
+- How about shared memory?
+
+### Services via HN
+
+- Current inception with `mount`
+- Can we enable *services* to mount themselves into the HN?
+
+	- Kernel system calls to perform operations on resources in that subtree of the HN should get translated into IPC to the service
+
+- What are the trade-offs of this approach?
+- Could you re-architect `systemd` to use this facility?
+- What else could you do with a system with this capability?
+
+### Perspective: CBOS vs. Hierarchical Namespace
+
+- CBOS: capability table = process namespace
+- HNOS: the hierarchical namespace + open connections = process namespace
+
+- Trade-offs and compromises?

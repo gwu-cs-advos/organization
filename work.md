@@ -294,25 +294,18 @@ Questions (complete in the provided form):
 
 ## C7:
 
-Questions (complete in the provided form):
+Day off!
 
-- TBD
+## L8: Plan 9
 
-References:
-
-- [TBD](TBD).
-	Starting point help: TBD.
-
-## L8:
+Today, we Plan 9!
+Please read section 5.3 in the book on Plan 9.
 
 Questions (complete in the provided form):
 
-- TBD
-
-References:
-
-- Lecture [video](TBD).
-- See Section on "" in the book.
+- What are the downsides of the Plan 9 approach?
+	Why might it not be ideal to have everything be a file, and to use 9p as an organizing principle?
+- What is unintuitive or interesting about the given examples?
 
 ## C8:
 

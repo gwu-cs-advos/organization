@@ -710,6 +710,11 @@ Lets go through [Table 1](http://doc.cat-v.org/plan_9/misc/ubiquitous_fileserver
 	Plan 9 unifies all (for the most part) resources into the hierarchical namespace of strings.
 	Why is it *powerful* to unify the representation of resources?
 	Why is it *powerful* in Plan 9 that there is a serialized protocol (9P) underlying this unified representation?
+- Linux is awesome.
+	Linux doesn't really do any of this stuff.
+	Not everything is a file; we have 100s of system calls, and we're always adding more (even when they aren't orthogonal); the hierarchical namespaces is really just there for files; distributed computation is not supported by the core of the system; etc...
+	But Linux does all the things we need.
+	What is the *core argument and utility* for something like Plan 9, if Linux can do everything that it can do?
 - Bonus question: How do REST APIs compare to Plan 9's namespaces and 9P?
 - Bonus question: How does coordination in `systemd` between (pubsub) services via D-Bus compare with coordination in Plan 9?
 	(Note: daemons in Linux are basically replaced with services that export their abstract resources in the HN using 9p.)

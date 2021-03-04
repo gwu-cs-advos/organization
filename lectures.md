@@ -696,6 +696,11 @@ Namespace operations:
 
 Containers in 1000LoC? (Docker? 10MLoC.)
 
+## Perspective on 9P
+
+What operations are involved?
+Lets go through [Table 1](http://doc.cat-v.org/plan_9/misc/ubiquitous_fileserver/ubiquitous_fileserver.pdf) in Section 4.
+
 ## Questions for Discussion
 
 - Why is it important that `mount(int fd, char *bind_point, ...)` takes a `fd` (a Plan 9 *channel*) as a first argument, and not a path?

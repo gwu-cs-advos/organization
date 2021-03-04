@@ -677,3 +677,44 @@ Lets create a HNOS (Hierarchical Namespace OS)!
 - HNOS: the hierarchical namespace + open connections = process namespace
 
 - Trade-offs and compromises?
+
+# C8: Plan 9
+
+## More examples
+
+Lets go through [Section 3](http://doc.cat-v.org/plan_9/misc/ubiquitous_fileserver/ubiquitous_fileserver.pdf).
+
+- network (structure)
+- DNS and connection service
+- mail (filtering)
+- window management
+
+Namespace operations:
+
+- per-process
+- simple (alias, remove, add)
+
+Containers in 1000LoC? (Docker? 10MLoC.)
+
+## Questions for Discussion
+
+- Why is it important that `mount(int fd, char *bind_point, ...)` takes a `fd` (a Plan 9 *channel*) as a first argument, and not a path?
+	Note, that `mount` in UNIX, in contrast, looks like this: `mount (char *dev, char *bind_point, ...)`, and the first argument is the path to a device that contains the file system (e.g. `/dev/sdb1`).
+	Hint: how do you think `import` is implemented (and don't forget about `export`)?
+- CBOSes unify all resources behind a per-process capability namespace.
+	Plan 9 unifies all (for the most part) resources into the hierarchical namespace of strings.
+	Why is it *powerful* to unify the representation of resources?
+	Why is it *powerful* in Plan 9 that there is a serialized protocol (9P) underlying this unified representation?
+- How does coordination in `systemd` between (pubsub) services via D-Bus compare with coordination in Plan 9?
+- How do REST APIs compare to Plan 9's namespaces and 9P?
+
+## Summary
+
+The power of
+
+1. uniform resource addressing,
+1. simple programming models to operate on these resources,
+1. means to programmatically provide abstract resources, and
+1. potentially over networks.
+
+This is one of the most powerful examples of an entire system *designed for composition*.

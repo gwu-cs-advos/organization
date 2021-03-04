@@ -721,6 +721,11 @@ Lets go through [Table 1](http://doc.cat-v.org/plan_9/misc/ubiquitous_fileserver
 
 ## Summary
 
+Why not Linux abstractions?
+Linux (100M LoC for ssh, docker, system management, etc...) vs. Plan 9 (<100K LoC).
+If you get anything from all of this, realize this: Our fundamental organizational abstractions can cause massive *accidental complexity*.
+And it is hard to see all of that complexity once we have your plethora of less unified, less compositional abstractions (e.g. Linux).
+
 This all demonstrates the power of
 
 1. uniform resource addressing,

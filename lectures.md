@@ -735,6 +735,12 @@ This all demonstrates the power of
 
 This is one of the most powerful examples of an entire system *designed for composition*.
 
+![](./resources/plan9_thinwaist.png)
+
+The hierarchical namespace used to organize and address abstract resources.
+$N$ applications use and interface with this abstraction, and $M$ services implement resources made available within the namespace.
+This means that a single application gets the benefit from of $M$ functionalities!
+
 ## Capabilities vs. HN as Organizing Principle
 
 1. Granularity: capabilities are very fine-grained -- they track small, *concrete resources*, and HN define a hierarchical string namespace, with pre-defined operations -- coarse grained tracking at the granularity of *abstract resources*.

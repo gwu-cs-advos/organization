@@ -712,6 +712,7 @@ Lets go through [Table 1](http://doc.cat-v.org/plan_9/misc/ubiquitous_fileserver
 	Why is it *powerful* in Plan 9 that there is a serialized protocol (9P) underlying this unified representation?
 - Bonus question: How do REST APIs compare to Plan 9's namespaces and 9P?
 - Bonus question: How does coordination in `systemd` between (pubsub) services via D-Bus compare with coordination in Plan 9?
+	(Note: daemons in Linux are basically replaced with services that export their abstract resources in the HN using 9p.)
 
 ## Summary
 

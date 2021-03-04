@@ -706,12 +706,12 @@ Lets go through [Table 1](http://doc.cat-v.org/plan_9/misc/ubiquitous_fileserver
 - Why is it important that `mount(int fd, char *bind_point, ...)` takes a `fd` (a Plan 9 *channel*) as a first argument, and not a path?
 	Note, that `mount` in UNIX, in contrast, looks like this: `mount (char *dev, char *bind_point, ...)`, and the first argument is the path to a device that contains the file system (e.g. `/dev/sdb1`).
 	Hint: how do you think `import` is implemented (and don't forget about `export`)?
-- How does coordination in `systemd` between (pubsub) services via D-Bus compare with coordination in Plan 9?
-- How do REST APIs compare to Plan 9's namespaces and 9P?
 - CBOSes unify all resources behind a per-process capability namespace.
 	Plan 9 unifies all (for the most part) resources into the hierarchical namespace of strings.
 	Why is it *powerful* to unify the representation of resources?
 	Why is it *powerful* in Plan 9 that there is a serialized protocol (9P) underlying this unified representation?
+- Bonus question: How do REST APIs compare to Plan 9's namespaces and 9P?
+- Bonus question: How does coordination in `systemd` between (pubsub) services via D-Bus compare with coordination in Plan 9?
 
 ## Summary
 
@@ -723,3 +723,11 @@ This all demonstrates the power of
 1. potentially over networks.
 
 This is one of the most powerful examples of an entire system *designed for composition*.
+
+## Capabilities vs. HN as Organizing Principle
+
+1. Granularity: capabilities are very fine-grained -- they track small, *concrete resources*, and HN define a hierarchical string namespace, with pre-defined operations -- coarse grained tracking at the granularity of *abstract resources*.
+2. Performance: CBOSes emphasize exceedingly fast access of resources, Plan 9 uses "slow" IPC, and 9P interpretation to operate on abstract resources.
+
+Intuition: Lets build a HN-oriented system on top of a CBOS to get the best of both worlds!
+Where do we use HN slowpaths, and where do we need to figure out how to provide efficient capability-based access to resources/functions?

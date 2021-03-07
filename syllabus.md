@@ -20,9 +20,9 @@ Note that you should reference/read/complete the work in "resources & work" at l
 | R2.18 | UNIX Design & Philosophy                         | [L6](./work.md#l6-unix)                                              |
 | T2.23 | VFS Design in `xv6`, plan 9, and Linux           | [C6](./work.md#c6-vfs)                                               |
 | R2.25 | Design focused on middleware/libraries           | [L7](./work.md#l7-beyond-unix)                                       |
-| T3.02 |                                                  | [C7](./work.md)                                                      |
-| R3.04 | Plan 9 Design & Philosophy                       | [L8](./work.md)                                                      |
-| T3.09 |                                                  | [C8](./work.md)                                                      |
+| T3.02 | Day off!                                         | C7                                                                   |
+| R3.04 | Plan 9 Design & Philosophy                       | [L8](./work.md#l8-plan-9)                                            |
+| T3.09 | Plan 9 Services & 9p                             | [C8](./work.md#c8-plan-9)                                            |
 | R3.11 | IPC and Time management -- Nova & `cos`          | [L9](./work.md)                                                      |
 | T3.16 | Spring recess                                    |                                                                      |
 | R3.18 | Spring recess                                    |                                                                      |

@@ -307,16 +307,31 @@ Questions (complete in the provided form):
 	Why might it not be ideal to have everything be a file, and to use 9p as an organizing principle?
 - What is unintuitive or interesting about the given examples?
 
-## C8:
+## C8: Plan 9
+
+Lets dive into Plan 9, and its equivalent of the VFS layer: the 9p protocol.
+What would it take to write a service in Plan 9?
+First, the library for helping services interact with the 9p protocol:
+
+- [9p.h](https://github.com/gwu-cs-advos/plan9/blob/master/sys/include/9p.h), and
+- [the library](https://github.com/gwu-cs-advos/plan9/tree/master/sys/src/lib9p)
+- including a [ramfs](https://github.com/gwu-cs-advos/plan9/blob/master/sys/src/lib9p/ramfs.c) example
+
+Then, two of the main consumers of the API:
+
+- [exportfs](https://github.com/gwu-cs-advos/plan9/blob/master/sys/src/cmd/exportfs/) (remember, this takes a local namespace and exposes them over a 9p channel, served over the network), and
+- [import](https://github.com/gwu-cs-advos/plan9/blob/master/sys/src/cmd/import.c) (remember, this contacts a 9p channel over the network, and exposes its namespace in the local namespace via mount).
 
 Questions (complete in the provided form):
 
-- TBD
-
-References:
-
-- [TBD](TBD).
-	Starting point help: TBD.
+- Assess the ramfs example that uses the 9p library versus the ramfs we saw in Linux.
+	How do they compare in terms of simplicity, and why is one simple versus the other?
+	Speculate how do they compare in terms of performance (you likely won't understand this from the code).
+- Why is `import` code so simple?
+	Where are the calls to the `9p` library?
+	Where is the logic for maintaining the namespace, and other functionality?
+- Exportfs can handle many concurrent client requests at the same time, even though the local namespace has blocking read and write.
+	First, identify where the actual read operation (in response to a `TREAD` 9p request) is conducted, and then answer how `exportfs` is written to enable multiple client requests to be handled concurrently even if one of them blocks.
 
 ## L9:
 

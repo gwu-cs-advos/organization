@@ -23,7 +23,7 @@ Note that you should reference/read/complete the work in "resources & work" at l
 | T3.02 | Day off!                                         | C7                                                                   |
 | R3.04 | Plan 9 Design & Philosophy                       | [L8](./work.md#l8-plan-9)                                            |
 | T3.09 | Plan 9 Services & 9p                             | [C8](./work.md#c8-plan-9)                                            |
-| R3.11 | IPC and Time management -- Nova & `cos`          | [L9](./work.md)                                                      |
+| R3.11 | Microkernel IPC Optimization                     | [L9](./work.md#l9-microkernel-ipc-optimization)                      |
 | T3.16 | Spring recess                                    |                                                                      |
 | R3.18 | Spring recess                                    |                                                                      |
 | T3.23 |                                                  | [C9](./work.md)                                                      |

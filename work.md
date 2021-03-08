@@ -333,16 +333,22 @@ Questions (complete in the provided form):
 - Exportfs can handle many concurrent client requests at the same time, even though the local namespace has blocking read and write.
 	First, identify where the actual read operation (in response to a `TREAD` 9p request) is conducted, and then answer how `exportfs` is written to enable multiple client requests to be handled concurrently even if one of them blocks.
 
-## L9:
+## L9: Microkernel IPC Optimization
 
+IPC is a foundational mechanism for composition of abstract resources provided by other modules.
+We've seen it again and again, in pipes, DBus, Plan 9 & 9P, and, of course, in Composite.
+Lets dive into how to make it real fast, and the challenges that presents.
 Questions (complete in the provided form):
 
-- TBD
+- Think of some cases in which you'd want to use asynchronous IPC between threads, and some cases when you'd want to use synchronous IPC.
+	(I know, not really a question; I want see your brainstorming!)
+- We talked about a lot of mechanisms, but they all have some downsides.
+	Which do you think makes the best set of trade-offs?
+	If you need to specify for which *systems* they are *best*, feel free.
 
 References:
 
-- Lecture [video](TBD).
-- See Section on "" in the book.
+- Lecture [video](https://youtu.be/wCoLTnHUwEY).
 
 ## C9:
 

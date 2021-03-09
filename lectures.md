@@ -678,7 +678,7 @@ Lets create a HNOS (Hierarchical Namespace OS)!
 
 - Trade-offs and compromises?
 
-# C8: Plan 9
+# L8: Plan 9
 
 ## More examples
 
@@ -748,3 +748,28 @@ This means that a single application gets the benefit from of $M$ functionalitie
 
 Intuition: Lets build a HN-oriented system on top of a CBOS to get the best of both worlds!
 Where do we use HN slowpaths, and where do we need to figure out how to provide efficient capability-based access to resources/functions?
+
+# C8: Plan 9
+
+Brief code overview:
+
+- importfs key operations
+- exportfs concurrency
+
+## Group Discussion
+
+- We discussed a few forms of interactions with distributed systems.
+	Discuss the system calls and interactions between 9p and hierarchical namespaces in each of:
+
+	1. Running a process remotely, using the *local* resources.
+	2. Run a process locally, using the *remote* resources.
+	3. Listing all processes in a distributed cluster of systems.
+
+- What modules, layers, and abstractions are involved in the Linux ramfs, and the Plan 9 one?
+- Compare your understanding of the performance of the Linux ramfs vs. the Plan 9 one.
+- Contemplate: how would you implement Plan 9-like user-level services that are "hooked" into the hierarchical namespace in a CBOS?
+
+## Discussion
+
+- Modules and communication in the ramfs: Linux vs. Plan 9
+- CBOS namespace with functionality provided by a service

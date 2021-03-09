@@ -20,6 +20,10 @@ This class is quite detailed and focused on the C implementation of various syst
 If you don't have a decent grasp of C, this class will be quite challenging.
 If you can effectively read C code, but still feel a little shakey with the language, you'll likely be in good company in the class.
 
+## Class schedule
+
+Find the [class schedule](./syllabus.md) and timeline.
+
 ## Class Materials
 
 The "book" for this class includes

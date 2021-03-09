@@ -765,9 +765,16 @@ Brief code overview:
 	2. Run a process locally, using the *remote* resources.
 	3. Listing all processes in a distributed cluster of systems.
 
+![A diagram for these options](resources/plan9structures.png)
+
 - What modules, layers, and abstractions are involved in the Linux ramfs, and the Plan 9 one?
 - Compare your understanding of the performance of the Linux ramfs vs. the Plan 9 one.
+
+![A diagram for these options](resources/linuxvsplan9.png)
+
 - Contemplate: how would you implement Plan 9-like user-level services that are "hooked" into the hierarchical namespace in a CBOS?
+
+![A diagram for these options](resources/cbosramfs.png)
 
 ## Discussion
 

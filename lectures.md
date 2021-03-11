@@ -796,7 +796,7 @@ Brief code overview:
 	`malloc` doesn't return your memory now, but perhaps in the future.
 	It is simply a lot easier to program to.
 
-- Optimization summary & discussion (direct switch, avoid scheduling, pass data directly without buffering)
+- Optimization summary & discussion (`call`/`reply_wait`, direct switch -- avoid scheduling, pass data directly without buffering)
 - Budgets; what is?
 - Nit: synchronous IPC includes both "synchronous IPC between threads" *and* "thread migration".
 	They are both doing IPC, and they are both synchronous.
@@ -805,7 +805,7 @@ Brief code overview:
 
 - How does IPC via synchronous interactions between threads track which thread (blocking on `call`) to activate when the server does a `reply_and_wait`?
 - What data-structures are necessary to track all of the client threads that are blocked on `call` awaiting server service?
-- What data-structures must be involved in the kernel to support synchronous invocations via call-gates?
+- What data-structures must be involved in the kernel to support synchronous invocations via thread migration?
 
 ## Discussion
 

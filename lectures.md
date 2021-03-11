@@ -780,3 +780,38 @@ Brief code overview:
 
 - Modules and communication in the ramfs: Linux vs. Plan 9
 - CBOS namespace with functionality provided by a service
+
+# L9: IPC Implementation and Optimization
+
+- Sync has some structural downsides: it does imply some "trust" of the client in the server -- synchronous = blocked until the server returns!
+- Async is useful when
+
+	1. communication is one-way -- remember "streaming"?;
+	1. the client does not want to trust that the server replies in a timely fashion;
+	1. communication is expected to be slow, thus the client should be encouraged to do something else in the mean time; if the computation is long, there's a higher chance that the client might have something to do in the mean time; and
+	1. communicating partners are *already asynchronous* (on different cores, or distributed).
+
+- So why synchronous?
+	Imagine *every system call to Linux* requiring you to later wait for a response?
+	`malloc` doesn't return your memory now, but perhaps in the future.
+	It is simply a lot easier to program to.
+
+- Optimization summary & discussion (direct switch, avoid scheduling, pass data directly without buffering)
+- Budgets; what is?
+- Nit: synchronous IPC includes both "synchronous IPC between threads" *and* "thread migration".
+	They are both doing IPC, and they are both synchronous.
+
+## Questions
+
+- How does IPC via synchronous interactions between threads track which thread (blocking on `call`) to activate when the server does a `reply_and_wait`?
+- What data-structures are necessary to track all of the client threads that are blocked on `call` awaiting server service?
+- What data-structures must be involved in the kernel to support synchronous invocations via call-gates?
+
+## Discussion
+
+- Thread migration code in [Composite](https://github.com/gwsystems/composite/blob/loader/src/kernel/capinv.c#L981).
+- Background:
+
+	- Data-structures (threads, invocation stacks, per-core structures and kernel stack, registers)
+	- Control flow
+	- Counting branches, loads (cache + TLB accesses)

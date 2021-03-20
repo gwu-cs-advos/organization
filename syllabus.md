@@ -26,7 +26,7 @@ Note that you should reference/read/complete the work in "resources & work" at l
 | R3.11 | Microkernel IPC Optimization                     | [L9](./work.md#l9-microkernel-ipc-optimization)                      |
 | T3.16 | Spring recess                                    |                                                                      |
 | R3.18 | Spring recess                                    |                                                                      |
-| T3.23 | Nova IPC and Capabilities                        | [C9](./work.md#c9-microkernel-vm-ipc)                                |
+| T3.23 | Nova IPC and Capabilities                        | [C9](./work.md#c9-microkernel--vm-ipc)                               |
 | R3.25 | Security Goals and Design                        | [L10](./work.md)                                                     |
 | T3.30 |                                                  | [C10](./work.md)                                                     |
 | R4.01 | Access Control and Information Flow              | [L11](./work.md)                                                     |

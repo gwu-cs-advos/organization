@@ -350,16 +350,50 @@ References:
 
 - Lecture [video](https://youtu.be/wCoLTnHUwEY).
 
-## C9:
+## C9: Microkernel + VM IPC
+
+For this, and the next code review, we're going to dive into Nova.
+The [Nova](http://hypervisor.org/eurosys2010.pdf) [hypervisor](http://hypervisor.org/) is a L4-lineage microkernel that uses IPC based on synchronous IPC between threads.
+It supports virtualization (e.g. of Linux) by using hardware virtualization extensions (called VMX in Intel chips, and SVM in AMD chips).
+These hardware extensions enable a VM to be executed without trapping from the VM into the kernel for most operations.
+For example, the hardware extensions enable
+
+1. the VM to have its own version of page-tables, thus to perform address virtualization without interacting with the real kernel (they hypervisor of the VMM), and
+2. the execution of a virtual user-level and kernel-level, and transitions between these modes (i.e. system calls, and exceptions) can proceed without trapping to the hypervisor.
+
+In short, the hardware support makes many of the hardware's normal facilities be directly accessed and programmed within the VM.
+However, some actions within the VM do cause traps outside of the VM.
+These traps might be due to a request for I/O (to a virtualized device), or due to an access to a "physical page" that the hypervisor doesn't have a mapping for (e.g. if we're providing 1GiB RAM for the VM, and the VM accesses a physical address at 1.5GiB).
+Nova transforms these traps into IPC to a server, than can handle the trap!
+Thus, a normal server will handle VM traps, thus can provide virtualized I/O for the VM!
+
+The [specification](https://github.com/udosteinberg/NOVA/blob/arm/doc/specification.pdf) for Nova provides quite a bit documentation that might be helpful for you.
+If you are going to use github's searching interface, you can use the [original repository](https://github.com/udosteinberg/NOVA/).
 
 Questions (complete in the provided form):
 
-- TBD
+- Nova has one of the fastest IPC implementations.
+	Give me a summary of the flow of control through the system for a pair of `call` (from the client), and `reply` (to "reply & wait" from the server).
+	What do you think makes this implementation so efficient?
+- Summarize the implementation of capability delegation and revocation (they have slightly different names in Nova).
+	Hint: delegation is performed as *part of synchronous IPC*.
 
 References:
 
-- [TBD](TBD).
-	Starting point help: TBD.
+- Find the [list of system calls](https://github.com/gwu-cs-advos/NOVA/blob/arm/src/x86_64/syscall.cpp#L546-L564).
+- The NOVA equivalent of [call](https://github.com/gwu-cs-advos/NOVA/blob/arm/src/x86_64/syscall.cpp#L111-L138) and [reply & wait](https://github.com/gwu-cs-advos/NOVA/blob/arm/src/x86_64/syscall.cpp#L171-L184).
+- The [`ret_user_sysexit`](https://github.com/gwu-cs-advos/NOVA/blob/arm/src/x86_64/ec.cpp#L155) is some assembly to simply return from kernel-level to user-level.
+	It is the "return" part of a system call.
+- Some acronyms:
+
+	- EC = execution context (e.g. thread!)
+	- UTCB = user-level thread control block which is region of memory shared by user-level and the kernel that can hold, for example, arguments to an IPC -- and generally, a set of registers.
+	- FPU = floating point unit -- the hardware that lets you do floating point computation (e.g. `float` and `double`).
+	- `cont` in an EC = a "continuation" that holds a function pointer to how to continue executing the thread when we try and switch back to it. An example: When we reply to a client's IPC request, the client's continuation is simply `ret_user_sysexit`, which (you guessed it!) simply returns to user-level to continue the client's computation post-`call`.
+	- An `rcap` is a "return capability" which is a capability that denotes the ability to return back to a client that is blocked `call`ing the server.
+		It is used to return control back to the client.
+	- `current` is the currently executing EC (thread).
+	- `Kobject`s are generic kernel objects (think the base-class for all kernel objects).
 
 ## L10:
 

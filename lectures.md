@@ -801,10 +801,21 @@ Brief code overview:
 - Nit: synchronous IPC includes both "synchronous IPC between threads" *and* "thread migration".
 	They are both doing IPC, and they are both synchronous.
 
-## Questions
+# C9: Nova and IPC
+
+## Project
+
+See the [writeup](./work.md#project).
+
+## Group Questions
+
+Nova:
 
 - How does IPC via synchronous interactions between threads track which thread (blocking on `call`) to activate when the server does a `reply_and_wait`?
 - What data-structures are necessary to track all of the client threads that are blocked on `call` awaiting server service?
+
+Thread migration:
+
 - What data-structures must be involved in the kernel to support synchronous invocations via thread migration?
 
 ## Discussion

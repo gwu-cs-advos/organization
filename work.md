@@ -395,18 +395,22 @@ References:
 	- `current` is the currently executing EC (thread).
 	- `Kobject`s are generic kernel objects (think the base-class for all kernel objects).
 
-## L10:
+## L10: Security Foundations
+
+We now pivot into security!
+Lets start with how to think about security: read section 6.2 of the book.
 
 Questions (complete in the provided form):
 
 - Using the definitions and principals in the book, compare and contrast the security of VMs, processes, and containers in Linux.
 	Be terse.
 	We'll discuss this in groups.
--
+- In which ways do you think that Linux adheres to the principles for system design?
+- How tamperproof do you think Linux is?
 
 References:
 
-- See Sections  in the book.
+- See Section 6.2 in the book.
 
 ## C10:
 

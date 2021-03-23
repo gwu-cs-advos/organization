@@ -27,7 +27,7 @@ Note that you should reference/read/complete the work in "resources & work" at l
 | T3.16 | Spring recess                                    |                                                                      |
 | R3.18 | Spring recess                                    |                                                                      |
 | T3.23 | Nova IPC and Capabilities                        | [C9](./work.md#c9-microkernel--vm-ipc)                               |
-| R3.25 | Security Goals and Design                        | [L10](./work.md)                                                     |
+| R3.25 | Security Goals and Foundations                   | [L10](./work.md#l10-security-foundations)                            |
 | T3.30 |                                                  | [C10](./work.md)                                                     |
 | R4.01 | Access Control and Information Flow              | [L11](./work.md)                                                     |
 | T4.06 |                                                  | [C11](./work.md)                                                     |

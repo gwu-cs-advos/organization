@@ -34,5 +34,5 @@ Note that you should reference/read/complete the work in "resources & work" at l
 | R4.08 | VMs: Nova & KVM                                  | [L12](./work.md)                                                     |
 | T4.13 |                                                  | [C12](./work.md)                                                     |
 | R4.15 | Multicore System Atoms and Optimization          | [L13](./work.md)                                                     |
-| T4.20 |                                                  | [C13](./work.MD)                                                     |
-| R4.22 | `parsec`, memcached, jemalloc                    |                                                                      |
+| T4.20 | `parsec`, memcached, jemalloc                    | [C13](./work.md)                                                     |
+| R4.22 | Final Presentations                              | [spec](./work.md#project)                                            |

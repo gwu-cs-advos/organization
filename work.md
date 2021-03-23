@@ -399,12 +399,14 @@ References:
 
 Questions (complete in the provided form):
 
-- TBD
+- Using the definitions and principals in the book, compare and contrast the security of VMs, processes, and containers in Linux.
+	Be terse.
+	We'll discuss this in groups.
+-
 
 References:
 
-- Lecture [video](TBD).
-- See Section on "" in the book.
+- See Sections  in the book.
 
 ## C10:
 
@@ -472,7 +474,148 @@ References:
 - Lecture [video](TBD).
 - See Section on "" in the book.
 
-# Homeworks
+# Project
+
+The purpose of the project is to dive into a core system technology and answer a set of questions:
+
+- Summarize the project, what it is, what its goals are, and why it exists.
+- What is the target *domain* of the system?
+	Where is it valuable, and where is it not a good fit?
+	These are all implemented in an engineering domain, thus are the product of trade-offs.
+	No system solves all problems (despite the claims of marketing material).
+- What are the "modules" of the system (see early lectures), and how do they relate?
+	Where are isolation boundaries present?
+	How do the modules communicate with each other?
+	What performance implications does this structure have?
+- What are the core abstractions that the system aims to provide.
+	How and why do they depart from other systems?
+- In what conditions is the performance of the system "good" and in which is it "bad"?
+	How does its performance compare to a Linux baseline (this discussion can be quantitative or qualitative)?
+- What are the core technologies involved, and how are they composed?
+- What are the security properties of the system?
+	How does it adhere to the principles for secure system design?
+	What is the reference monitor in the system, and how does it provide complete mediation, tamperproof-ness, and how does it argue trustworthiness?
+- What optimizations exist in the system?
+	What are the "key operations" that the system treats as a fast-path that deserve optimization?
+	How does it go about optimizing them?
+- Subjective: What do you like, and what don't you like about the system?
+	What could be done better were you to re-design it?
+
+It is your responsibility to approach "marketing" claims of each project with extreme skepticism, and to *substantiate your claims about each system with 3rd party (or scientific) evaluations, and with references to the code*.
+
+## Timeline
+
+| date | item                                                                                               |
+| ---  | ---                                                                                                |
+| 3.25 | Group Members Determined (~4): github classroom team repo created                                  |
+| 3.30 | Due 10am: `proposed_topic.md` file proposing project topic (or just listing title from below)      |
+| 4.01 | Project "OK", or office hours discussion with Gabe                                                 |
+| 4.06 | `hypothesis.md` containing you hypothesis gleaned from documentation, `research.md` progress       |
+| 4.15 | `research.md` fleshed out with references to code, experiments, and papers.                        |
+|      | Please annotate each part of `research.md` with *who* did that portion of research.                |
+|      | This includes a list of hypothesis that have been confirmed or refuted, with details.              |
+| 4.20 | `report.md` with a thorough analysis of the system, motivated by the questions above.              |
+|      | This should include references to code, papers, and experiments throughout to validate statements. |
+|      | At the end, include a summary of who did what. Everyone *must* agree with what is written here.    |
+|      | Contact Gabe if there are any conflicts.                                                           |
+| 4.22 | Final presentations, including presentation files in `presentation/`                               |
+
+Your repository for this project will contain at least the following at the time of completion:
+
+- `README.md` to simply summarize the structure of the repo.
+	If you don't depart from this prescribed structure, it can simply be a list similar to above.
+- `research.md` which includes a dump of all of the research you've done.
+	You might also have a `research/` directory if you need to store materials or additional information.
+- `hypothesis.md` which includes your initial hypothesis about the project from the documentation and a cursory overview of the project.
+	For many people, the material in this would be close to a final "project report" (though normally in a more refined format), but in this project, you'll go steps further to confirm/refute your hypothesis, and dive into the details.
+- `proposed_topic.md` the initial project proposal.
+- `report.md` the final report
+- `resources/` which can contain any additional resources you'd like.
+	For example, to include images in your final report, you might store them here.
+	Remember that you can use `pandoc` to generate a nice pdf if you'd like.
+	In that case, feel free to also include a `Makefile` to guide compilation.
+- `presentation/` which includes relevant files for the presentation.
+
+**Grading.**
+Grades will be assigned based on:
+
+1. Accuracy of investigation (statements substantiated with references).
+2. Depth of investigation (strong statements about the system).
+	The final report should be around 10 pages (or more).
+3. Polish on the final report and presentation.
+
+I'm sorry this is subjective,
+Everyone starts off at an "A", and decreases from there where any of the above are lacking.
+All team member's grades are coupled, unless the stated work distribution (in `research.md` shows imbalances).
+
+## Example Systems
+
+You can propose any system you'd like to dive into.
+Here are a few examples.
+
+### Firecracker VM
+
+Firecracker is the core of the serverless (function) platforms in Amazon's EC2.
+It is a "virtualization minimized" infrastructure that uses Linux's KVM support for hardware accelerated virtualization.
+It also takes an unconventional approach: only support the bare minimum of hardware in the hypervisor necessary for cloud-based execution.
+This pairs down the KVM hypervisor a huge amount (compared to, for example, `qemu`).
+Note that firecracker is written in Rust, so it will be hard to dive into if you aren't willing to explore that language.
+
+- [homepage](https://firecracker-microvm.github.io/)
+- [paper](https://www.usenix.org/conference/nsdi20/presentation/agache)
+- [github](https://github.com/firecracker-microvm/firecracker)
+
+### Xen
+
+The workhorse of Amazon EC2 for over ten years, Xen provides virtualization based around having a highly privileged VM (Dom0) to do most system administration.
+As such its performance and security must consider not just a VM and the hypervisor, but also Dom0.
+Its interesting structure makes a number of trade-offs, and an analysis of Xen will need to consider why Amazon (its largest user) has been moving away from it, onto Linux KVM-based systems.
+
+- [homepage](https://xenproject.org/)
+- [github](https://github.com/xen-project/xen)
+- There are countless papers on Xen.
+
+### gVisor
+
+gVisor is used as the foundation for serving Google Cloud Functions.
+gVisor makes the observation that containers are not designed to protect the kernel from applications, thus a bug in the kernel might be used to compromise the entire system.
+Instead, gVisor intercepts all system requests from applications, and implements a user-level kernel-like thing.
+In some sense, gVisor conceptually lies between containers and virtualization, and is implemented in a manner that is completely different from both.
+A lot of gVisor is written in go, but go is relatively easy to read/understand, so I don't see this inhibiting a group from diving in.
+
+- [homepage](https://gvisor.dev/)
+- [github](https://github.com/google/gvisor)
+- A paper doing an [analysis of performance](https://www.usenix.org/conference/hotcloud19/presentation/young).
+
+### Node Isolates and `isolated-vm`
+
+Node is the server-side javascript VM.
+Server-side javascript has proven quite useful as a development team can avoid needing to consider and use multiple languages, and they can leverage the same, large, collection of libraries.
+However, once you're running on the server, you might increasingly be concerned about isolating different scripts running for different clients.
+Node supports isolates and infrastructure built on top of them to provide *some degree* of isolation.
+These are provided as part of the *language runtime*, and not as part of the OS.
+If you want to dive into the massive complexity of such a runtime, this is a great way to do it!
+
+- [API documentation](https://v8docs.nodesource.com/node-0.8/d5/dda/classv8_1_1_isolate.html)
+- [npm documentation](https://www.npmjs.com/package/isolated-vm)
+- [github](https://github.com/laverdet/isolated-vm)
+- There are multiple papers that assess performance.
+
+### OSv Unikernel
+
+Unikernels are "library OSes" (in the vain of [exokernel](https://dl.acm.org/doi/10.1145/224056.224076) OSes) in which the OS is a library loaded with the application.
+Demikernel is one example of such a system.
+OSv is a full replacement for Linux as a unikernel!
+Unikernels are an interesting take on using virtualization as the core isolation facility in the system, and remove isolation (thus its performance impact) within the VM.
+OSv is supported on multiple of the virtualization infrastructures above.
+
+- [github](https://github.com/cloudius-systems/osv)
+- [paper](https://www.usenix.org/conference/atc14/technical-sessions/presentation/kivity)
+- [solo5](https://github.com/Solo5/solo5) is another unikernel, but it is more of a unikernel framework, which makes it much harder to approach and understand.
+
+# Thoughts on Potential Projects
+
+**Ignore this section in 2021.**
 
 IoT systems are increasingly popular.
 Many of them forego security and isolation for simplicity.

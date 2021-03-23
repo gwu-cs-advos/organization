@@ -511,13 +511,8 @@ It is your responsibility to approach "marketing" claims of each project with ex
 | 3.30 | Due 10am: `proposed_topic.md` file proposing project topic (or just listing title from below)      |
 | 4.01 | Project "OK", or office hours discussion with Gabe                                                 |
 | 4.06 | `hypothesis.md` containing you hypothesis gleaned from documentation, `research.md` progress       |
-| 4.15 | `research.md` fleshed out with references to code, experiments, and papers.                        |
-|      | Please annotate each part of `research.md` with *who* did that portion of research.                |
-|      | This includes a list of hypothesis that have been confirmed or refuted, with details.              |
-| 4.20 | `report.md` with a thorough analysis of the system, motivated by the questions above.              |
-|      | This should include references to code, papers, and experiments throughout to validate statements. |
-|      | At the end, include a summary of who did what. Everyone *must* agree with what is written here.    |
-|      | Contact Gabe if there are any conflicts.                                                           |
+| 4.15 | `research.md` fleshed out with references to code, experiments, and papers.  <br>  Please annotate each part of `research.md` with *who* did that portion of research. <br> This includes a list of hypothesis that have been confirmed or refuted, with details.    |
+| 4.20 | `report.md` with a thorough analysis of the system, motivated by the questions above. <br> This should include references to code, papers, and experiments throughout to validate statements. <br> At the end, include a summary of who did what. Everyone *must* agree with what is written here. <br> Contact Gabe if there are any conflicts.              |
 | 4.22 | Final presentations, including presentation files in `presentation/`                               |
 
 Your repository for this project will contain at least the following at the time of completion:

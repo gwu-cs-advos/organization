@@ -826,3 +826,38 @@ Thread migration:
 	- Data-structures (threads, invocation stacks, per-core structures and kernel stack, registers)
 	- Control flow
 	- Counting branches, loads (cache + TLB accesses)
+
+# L10: Security Foundations
+
+## Group Discussion
+
+Compare and describe in terms of the security principles and what is acting as refmon in each case.
+
+- Linux processes, containers, and VMs.
+- CBOSes.
+
+When you come back from group discussions, we're going to walk through each principle and reflect how they are considered in each system.
+
+## Discussion
+
+- One by one, comparing for VM vs. Container vs. Process vs. CBOS
+
+	- Complete mediation (dual mode vs. HW Virt support)
+	- Least common mechanism
+	- Minimal TCB
+	- Least privilege
+	- Econ. of mechanism
+	- Separation of Priv.
+	- Defense in depth
+
+- How do we abstract this complexity to create mental abstractions to understand how to evaluate systems?
+	Lets look at *attack dimensions*:
+
+	1. breadth of functional interface (attack surface)
+	2. breadth of namespace (thus resource availability)
+	3. complexity of implementation
+	4. shared mechanism
+
+- What does it take for a refmon to be tamperproof?
+	(Examples modules, complexity in DirtyCOW.)
+- Open source vs security?

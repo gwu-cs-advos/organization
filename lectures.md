@@ -840,13 +840,15 @@ When you come back from group discussions, we're going to walk through each prin
 
 ## Discussion
 
+![Comparison of the security properties of processes, containers, VMs, and CBOSes.](resources/security_analysis.png)
+
 - One by one, comparing for VM vs. Container vs. Process vs. CBOS
 
 	- Complete mediation (dual mode vs. HW Virt support)
-	- Least common mechanism
+	- Econ. of mechanism
 	- Minimal TCB
 	- Least privilege
-	- Econ. of mechanism
+	- Least common mechanism
 	- Separation of Priv.
 	- Defense in depth
 

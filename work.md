@@ -412,16 +412,30 @@ References:
 
 - See Section 6.2 in the book.
 
-## C10:
+## C10: Defense in Depth
+
+Do some research into OpenBSD.
+BSD is similar to Linux in that it is an implementation of POSIX plus a surrounding ecosystem.
+There are many BSD variants similar (but not identical to) how there are many Linux distributions (Ubuntu, Gentoo, Arch).
+OpenBSD is a BSD variant that focuses on security.
+It still has a large monolithic kernel, but they attempt to make the system as secure as possible by simplifying the system, and adding defense in depth.
+For the questions today, you don't need to reference code, and can likely find many answers and mailing lists, webpages, and papers.
+
+Today you'll simply provide three examples of technical techniques in which OpenBSD designs the system explicitly for security.
+Write your responses in a way that demonstrates that you have some understanding of the technique, rather than simply cut and pasted it.
+Use your own words.
+I expect that finding a number of techniques won't take more than 5 minutes, but understanding them will take longer.
 
 Questions (complete in the provided form):
 
-- TBD
+- Example 1
+- Example 2
+- Example 3
 
 References:
 
-- [TBD](TBD).
-	Starting point help: TBD.
+- OpenBSD [webpage](https://www.openbsd.org/).
+	This is one potential starting point for your investigation.
 
 ## L11:
 

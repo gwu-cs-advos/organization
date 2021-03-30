@@ -863,3 +863,41 @@ When you come back from group discussions, we're going to walk through each prin
 - What does it take for a refmon to be tamperproof?
 	(Examples modules, complexity in DirtyCOW.)
 - Open source vs security?
+
+# L10: Attacks and Defense in Depth
+
+To motivate why there are so many strategies used by [OpenBSD](www.openbsd.org), the UNIX OS known for its stringent focus on security, and other systems to enhance system security, today we're going to dive into what attacks look like.
+The intention is to simply get a better intuition about why we care about security.
+
+First, lets discuss general strategies for attacks.
+
+- *Control-flow attacks.*
+	How can an attacker take a bug in a program, and convert it into execution of their own malicious logic?
+	Goal: execute some shell code.
+	How do?
+	This is an interesting story of escalation between attackers and defenders.
+
+	- Stack overflow
+	- ROP chaining
+	- Heap spraying
+
+	Defenses:
+
+	- W xor X
+	- ASLR (and PIE/PIC)
+	- Stack protector
+	- malloc guard pages
+
+- *Privilege escalation attacks.*
+	What is our goal once we gain control of a set of modules in a protection domain?
+	Does the module have access to the data and control that we want?
+	If not, we need to increase our privileges!
+
+	- Examples of kernel vulnerabilities: [dirtyCOW](https://dirtycow.ninja/) [example](https://github.com/dirtycow/dirtycow.github.io/wiki/VulnerabilityDetails#analysis) ([patch](https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/commit/?id=19be0eaffa3ac7d8eb6784ad9bdbc7d67ed8e619)) and [ebpf](https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2017-16995) ([patch](https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/commit/?id=95a762e2c8c942780948091f8f2a4f32fce1ac6f)) (there are [many](https://www.exploit-db.com/?platform=linux) more issues)
+	- [setuid system call and bit](https://www.hackingarticles.in/linux-privilege-escalation-using-suid-binaries/) [privilege](https://micrictor.github.io/Exploiting-Setuid-Programs/) [escalation](https://blog.creekorful.org/2020/09/setuid-privilege-escalation/) with [systemd](https://bugs.chromium.org/p/project-zero/issues/detail?id=1771) [example](https://bugzilla.redhat.com/show_bug.cgi?id=1684607) due to, ironically, a [security feature!](http://0pointer.net/blog/dynamic-users-with-systemd.html)
+
+		- Simple example of it [cp](https://www.hackingarticles.in/linux-privilege-escalation-using-suid-binaries/) were setuid `root`.
+		- [systemd](https://bugs.chromium.org/p/project-zero/issues/detail?id=1771) issue with `DynamicUser`
+
+	The main take-away I want you all to have: it is really hard to get code right.
+	Secure systems assume that bugs exist (or formally verify), and try to design code to minimize the impact of the compromise.

@@ -28,11 +28,11 @@ Note that you should reference/read/complete the work in "resources & work" at l
 | R3.18 | Spring recess                                    |                                                                      |
 | T3.23 | Nova IPC and Capabilities                        | [C9](./work.md#c9-microkernel--vm-ipc)                               |
 | R3.25 | Security Goals and Foundations                   | [L10](./work.md#l10-security-foundations)                            |
-| T3.30 | Defense in Depth in OpenBSD                      | [C10](./work.md#c10-defense-in-depth)                                |
-| R4.01 | Access Control and Information Flow              | [L11](./work.md)                                                     |
-| T4.06 |                                                  | [C11](./work.md)                                                     |
-| R4.08 | VMs: Nova & KVM                                  | [L12](./work.md)                                                     |
-| T4.13 |                                                  | [C12](./work.md)                                                     |
-| R4.15 | Multicore System Atoms and Optimization          | [L13](./work.md)                                                     |
-| T4.20 | `parsec`, memcached, jemalloc                    | [C13](./work.md)                                                     |
+| T3.30 | Attacks vs. Defenses                             | [C10](./work.md#c10-attacks)                                         |
+| R4.01 | Privilege Escalation and Defense in Depth        | L11                                                                  |
+| T4.06 | VMs: Nova & KVM                                  | [C11](./work.md)                                                     |
+| R4.08 |                                                  | [L12](./work.md)                                                     |
+| T4.13 | Multicore System Atoms and Optimization          | [C12](./work.md)                                                     |
+| R4.15 | The Calculus of Scalability                      | [L13](./work.md)                                                     |
+| T4.20 | Case stuidies: `parsec`, memcached, jemalloc     | [C13](./work.md)                                                     |
 | R4.22 | Final Presentations                              | [spec](./work.md#project)                                            |

@@ -437,16 +437,7 @@ References:
 - OpenBSD [webpage](https://www.openbsd.org/).
 	This is one potential starting point for your investigation.
 
-## L11:
-
-Questions (complete in the provided form):
-
-- TBD
-
-References:
-
-- Lecture [video](TBD).
-- See Section on "" in the book.
+## L11: No questions
 
 ## C11:
 

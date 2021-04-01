@@ -982,7 +982,7 @@ Then put a vote in the chat on the topics you want to discuss most (even those y
 - Practical implementation of privilege separation in ssh (and others)
 - Privilege revocation -- dropping privilege after initialization (discretionary de-privilege)
 - `fork`+`exec` in priv. sep. programs (`fork` without `exec` considered harmful)
-- Dynamic linking and GOT/PLT (global offset table, procedure linkage table) protection
+- Dynamic linking and [GOT/PLT](https://www.technovelty.org/linux/plt-and-got-the-key-to-code-sharing-and-dynamic-libraries.html) (global offset table, procedure linkage table) protection
 - Malloc randomization, guard pages, and use-after free detection (change application image every run!)
 - [Re-link](https://marc.info/?l=openbsd-tech&m=149732026405941) based randomization vs. ASLR (for library order and address randomization, and kernel [relinking](https://lwn.net/Articles/727697/) at boot of the *next* kernel) (change application image every run!)
 - Kernel implementation of parallelism and concurrency (locking strategies)

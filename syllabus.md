@@ -30,8 +30,8 @@ Note that you should reference/read/complete the work in "resources & work" at l
 | R3.25 | Security Goals and Foundations                   | [L10](./work.md#l10-security-foundations)                            |
 | T3.30 | Attacks vs. Defenses                             | [C10](./work.md#c10-attacks)                                         |
 | R4.01 | Privilege Escalation and Defense in Depth        | L11                                                                  |
-| T4.06 | VMs: Nova & KVM                                  | [C11](./work.md)                                                     |
-| R4.08 |                                                  | [L12](./work.md)                                                     |
+| T4.06 | VMs: KVM                                         | C11                                                                  |
+| R4.08 | Nova Integration with VMX                        | [L12](./work.md#nova-vmx-interface)                                  |
 | T4.13 | Multicore System Atoms and Optimization          | [C12](./work.md)                                                     |
 | R4.15 | The Calculus of Scalability                      | [L13](./work.md)                                                     |
 | T4.20 | Case stuidies: `parsec`, memcached, jemalloc     | [C13](./work.md)                                                     |

@@ -3,10 +3,12 @@
 int var;
 int var2;
 
+void baz(void);
+
 void
 foo(int *data)
 {
-	*data = 4;
+	baz();
 	return;
 }
 

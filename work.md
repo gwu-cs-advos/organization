@@ -439,27 +439,51 @@ References:
 
 ## L11: No questions
 
-## C11:
+N/A
+
+## C11: No questions (see L12)
+
+N/A
+
+## L12: Nova VMX Interface
+
+Lets dive deeper into NOVA!
+Today we're going to understand what it takes for an OS to interface with the [hardware virtualization acceleration](https://en.wikipedia.org/wiki/X86_virtualization), in this case Intel's Virtual Machine Extensions (VMX or, sometimes, VT-x).
+
+Specifically, we want to understand the security properties of hypervisors (the kernel), VMMs (virtual machine monitors) that provide virtualization of I/O devices, and other hardware that VMX doesn't emulate.
+Nova's initial claim to fame was that the VMM could be implemented in user-level (remember: microkernel!), thus leaving only the interface to VMX in the kernel.
+
+VMX virtualizes quite a significant set of hardware features.
+These include
+
+- page-tables (thus the virtual, guest kernel can directly access page-table support within the "physical memory" provided to it by the hypervisor) through Extended Page-Tables (EPT),
+- dual-mode protection (thus system calls, exceptions, and many sensitive instructions can occur in the VM without interacting with -- i.e. trapping to -- the hypervisor), and
+- even interrupts can sometimes be vectored directly to the VM.
+
+This is fine, but sounds quite like magic.
+What does this hardware actually look like, and how does an OS interface with it?
+At its core, VMX defines a Virtual Machine Control Block (VMCB) which is simple a chunk of memory that holds the virtual hardware state of the VM, and a set of instructions to using it.
+For example: `VMPTRLD` and `VMPTRST`setup the VMCB, `VMREAD` and `VMWRITE` manipulate the page, `VMLAUNCH`, and `VMRESUME` execute the VM in various ways (see [Vol. 1, section 5.22](https://software.intel.com/content/www/us/en/develop/download/intel-64-and-ia-32-architectures-sdm-combined-volumes-1-2a-2b-2c-2d-3a-3b-3c-3d-and-4.html)).
+Find the documentation for how software can interact with the VMCB in [Vol. 3C, section 24.11](https://software.intel.com/content/www/us/en/develop/download/intel-64-and-ia-32-architectures-sdm-combined-volumes-1-2a-2b-2c-2d-3a-3b-3c-3d-and-4.html).
+When the VM executes and executes an instruction that VMX doesn't know how to virtualize, it can cause a `vmexit` which is an exception that triggers the hypervisor (which should handle the operation).
+
+The references below contain most of the code you need to know about.
+Recall our previous discussion of the NOVA source code.
 
 Questions (complete in the provided form):
 
-- TBD
+- Please piece together the sequence of code that gets executed from a `vmexit` (that triggers a `handle_vmx`, and often `vmx_exception`) which triggers IPC to a server thread, and then eventually returns to continue execution in the VM.
 
 References:
 
-- [TBD](TBD).
-	Starting point help: TBD.
+- See the [nova](https://github.com/gwu-cs-advos/NOVA/) source code (see the source repo if you want to use github's searchable interface)
+- VMX code includes:
 
-## L12:
-
-Questions (complete in the provided form):
-
-- TBD
-
-References:
-
-- Lecture [video](TBD).
-- See Section on "" in the book.
+	- [vmcb](https://github.com/gwu-cs-advos/NOVA/blob/arm/inc/x86_64/vmx.hpp#L26),
+	- some [operations](https://github.com/gwu-cs-advos/NOVA/blob/arm/inc/x86_64/vmx.hpp#L398-L423) on the vmcb,
+	- and its [initialization](https://github.com/gwu-cs-advos/NOVA/blob/arm/src/x86_64/vmx.cpp#L48-L142),
+	- integration of the control flow of VMs (e.g. `vmexit` turns into IPC) into the [execution contexts](https://github.com/gwu-cs-advos/NOVA/blob/arm/src/x86_64/ec_vmx.cpp) of NOVA,
+	- and [starting and resuming](https://github.com/gwu-cs-advos/NOVA/blob/arm/src/x86_64/ec.cpp#L178-L232) VMs.
 
 ## C12:
 

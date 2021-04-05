@@ -485,6 +485,9 @@ References:
 	- integration of the control flow of VMs (e.g. `vmexit` turns into IPC) into the [execution contexts](https://github.com/gwu-cs-advos/NOVA/blob/arm/src/x86_64/ec_vmx.cpp) of NOVA,
 	- and [starting and resuming](https://github.com/gwu-cs-advos/NOVA/blob/arm/src/x86_64/ec.cpp#L178-L232) VMs.
 
+- Don't forget that [`send_msg`](https://github.com/gwu-cs-advos/NOVA/blob/arm/src/x86_64/syscall.cpp#L81-L109) is very general and uses template magic to contain the continuation to use for execution when you *return to the calling ec (thread)*.
+- Also remember that the "arguments" and return values are passed from the client into the server's `utcb` (user-level thread control block).
+
 ## C12:
 
 Questions (complete in the provided form):

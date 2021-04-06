@@ -1018,7 +1018,12 @@ Quick discussion:
 Usability vs. Security
 
 - UNIX -> security
+
+	- challenge: retrofit strong security into UNIX
+
 - CBOS -> usability
+
+	- common approach: VMs vs. secure modules
 
 ## [Discretionary Access Control (DAC)](https://en.wikipedia.org/wiki/Discretionary_access_control)
 

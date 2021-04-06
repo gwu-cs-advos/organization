@@ -996,3 +996,77 @@ Is there another way to do this?
 - 39 pledge priv rev
 - 51 unveil priv rev
 - 68 priv sep + priv rev
+
+# C11: Attack Surface and Mandatory vs. Discretionary Access Control
+
+Again: understanding *attack surface*.
+How do we abstract this complexity to create mental abstractions to understand how to evaluate systems?
+Lets look at *attack dimensions*:
+
+1. breadth of functional interface (attack surface)
+2. breadth of namespace (thus resource availability)
+3. complexity of implementation
+4. shared mechanism
+
+Quick discussion:
+
+- Separation kernel
+- UNIX
+- VMs
+- CBOS
+
+Usability vs. Security
+
+- UNIX -> security
+- CBOS -> usability
+
+## [Discretionary Access Control (DAC)](https://en.wikipedia.org/wiki/Discretionary_access_control)
+
+- Users have the ability to change the access rights to their accessible resources.
+- Think: `chmod`, `chown`/`chgrp`, globally accessible ports and shared memory (create connection, server data), etc...
+- Is the protection of data determined by the user?
+	What if a user's program is compromised? -> No data protection (passwords, secret keys, etc...).
+
+## [Mandatory Access Control (MAC)](https://en.wikipedia.org/wiki/Mandatory_access_control)
+
+- System-wide policies for restrictions on CIA that users cannot subvert
+- Often viewed as restricting information flow (C -- e.g. [Bell-LaPadula](https://en.wikipedia.org/wiki/Bell%E2%80%93LaPadula_model) security model ), or on the ability to modify (I -- e.g. [Biba](https://en.wikipedia.org/wiki/Biba_Model) security model)
+- Unfortunately, these are often *not practically useful*.
+	What if the president wants to tweet?
+	What if a sysadmin wants access to logs for important process?
+	What if users want to collaborate (google docs)?
+
+	- What do we do: apply them only to the programs that have the highest likelihood or impact of compromise.
+
+MAC implementation in Linux: [*Linux Security Modules*](http://www.cse.psu.edu/~trj1/cse544-s10/papers/lsm.pdf).
+*Security modules* (in the kernel) get *callbacks* on *all* resource accesses (e.g. even on `read`/`write`, not just on `open`), and can make yes/no decisions (which supports *revocation*).
+This enables different security policy *modules* to define different MAC (or stronger DAC) policies.
+
+![Image taken from "Linux Security Modules:General Security Support for the Linux Kernel" by Wright et al.](./resources/lsm.png)
+
+- Based on the [Flask security architecture](https://www.cs.cmu.edu/~dga/papers/flask-usenixsec99.pdf).
+- Details about [LSM](https://www.kernel.org/doc/html/latest/security/lsm.html) and its [API](https://www.kernel.org/doc/html/latest/security/lsm-development.html)).
+
+	- Each object (e.g. files, network ports) is associated with a set of labels.
+	- Each principal (e.g. user, process) is associated with a set of labels.
+	- The module determines which principals can access which labels.
+
+		- Simple ([apparmor](https://en.wikipedia.org/wiki/AppArmor), [Tomoyo](http://tomoyo.osdn.jp/2.6/index.html.en)): label objects, identified by a *path*, that a principle can access with the same label.
+			But what if an intermediate principal provides *indirect* access through IPC?
+			*Policy file* for each application specifies accessible paths (and `rwx` permissions within those paths).
+			Question: how is this different from `unveil`.
+
+		- Complex (seLinux[(1)](https://en.wikipedia.org/wiki/Security-Enhanced_Linux)[(2)](https://wiki.centos.org/HowTos/SELinux)): controlling [information flow](https://wiki.gentoo.org/wiki/SELinux/Information_flow_control) -- principals accessing objects gain their labels (and vice-versa), and you can only access a specific set of labels (often there is a total order of labels like classification levels).
+			The intermediate principal gains the label of the information you shouldn't access, thus preventing IPC.
+
+## CBOS MAC
+
+Capability-based systems naturally provide strong [confinment](https://www.cs.utexas.edu/~shmat/courses/cs380s_fall09/lampson73.pdf), but are not natural for complicated MAC policies!
+If you provide a capability to a domain, how can you ensure that it is read-only shareable with higher-privilege/classification domains, and write-only shareable with lower-privilege/classification domains (Bell-LaPadula)?
+Composite defines sharing policies in user-level, thus avoiding this challenge, but L4 variants must build quite a bit to provide such MAC policies.
+
+# L12: VM Architectures and APIs
+# C12: Multicore Atoms and Optimization
+# L13: The Calculus of Scalability
+# C13: Parallelism Case Studies
+# L14: Project Presentations

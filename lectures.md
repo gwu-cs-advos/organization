@@ -1045,7 +1045,7 @@ This enables different security policy *modules* to define different MAC (or str
 ![Image taken from "Linux Security Modules:General Security Support for the Linux Kernel" by Wright et al.](./resources/lsm.png)
 
 - Based on the [Flask security architecture](https://www.cs.cmu.edu/~dga/papers/flask-usenixsec99.pdf).
-- Details about [LSM](https://www.kernel.org/doc/html/latest/security/lsm.html) and its [API](https://www.kernel.org/doc/html/latest/security/lsm-development.html)).
+- Details about [LSM](https://www.kernel.org/doc/html/latest/security/lsm.html) and its [API](https://www.kernel.org/doc/html/latest/security/lsm-development.html).
 
 	- Each object (e.g. files, network ports) is associated with a set of labels.
 	- Each principal (e.g. user, process) is associated with a set of labels.
@@ -1062,8 +1062,9 @@ This enables different security policy *modules* to define different MAC (or str
 ## CBOS MAC
 
 Capability-based systems naturally provide strong [confinment](https://www.cs.utexas.edu/~shmat/courses/cs380s_fall09/lampson73.pdf), but are not natural for complicated MAC policies!
-If you provide a capability to a domain, how can you ensure that it is read-only shareable with higher-privilege/classification domains, and write-only shareable with lower-privilege/classification domains (Bell-LaPadula)?
-Composite defines sharing policies in user-level, thus avoiding this challenge, but L4 variants must build quite a bit to provide such MAC policies.
+
+- Example: If you provide a capability to a domain, how can you ensure that it is read-only shareable with higher-privilege/classification domains, and write-only shareable with lower-privilege/classification domains (Bell-LaPadula)?
+- Composite defines sharing policies in user-level, thus avoiding this challenge, but L4 variants must build quite a bit to provide such MAC policies.
 
 # L12: VM Architectures and APIs
 # C12: Multicore Atoms and Optimization

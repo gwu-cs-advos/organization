@@ -1086,6 +1086,10 @@ Group Discussion:
 	Go over code together (screenshare?) if necessary to clarify any confusions.
 - Quick: Discuss the distinction between a kernel hypervisor, and a VMM.
 - How do you think that a user-level VMM interacts with the Nova support for hardware virtualization?
+
+	- How does it crate the VMs?
+	- How does it "get at" the VMCB state (i.e. registers)?
+
 - Lets simulate the initial stages of understanding an API.
 	Take five minutes alone:
 	Skim through the Linux [KVM API overview](https://lwn.net/Articles/658511/).

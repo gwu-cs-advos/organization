@@ -1072,6 +1072,38 @@ Capability-based systems naturally provide strong [confinment](https://www.cs.ut
 - Composite defines sharing policies in user-level, thus avoiding this challenge, but L4 variants must build quite a bit to provide such MAC policies.
 
 # L12: VM Architectures and APIs
+
+Overview of VMX hardware:
+
+- dual-mode execution (syscalls, exceptions)
+- sensitive instructions (`sysexit` and `movl %eax, %cr3` vs. `halt`)
+- EPT
+- interrupts
+
+Group Discussion:
+
+- Discuss your understanding of the Nova mechanisms for creating running, and interacting with VMs.
+	Go over code together (screenshare?) if necessary to clarify any confusions.
+- Quick: Discuss the distinction between a kernel hypervisor, and a VMM.
+- How do you think that a user-level VMM interacts with the Nova support for hardware virtualization?
+- Lets simulate the initial stages of understanding an API.
+	Take five minutes alone:
+	Skim through the Linux [KVM API overview](https://lwn.net/Articles/658511/).
+	KVM is the Linux support for hardware virtualization acceleration (as we saw in Nova).
+
+	Come back together as a group:
+	How does a user-level VMM program and interact with KVM-created VMs?
+	What is confusing about this API?
+
+Now lets go through a simple example of writing a VMM:
+
+- Find [the code](https://github.com/gwu-cs-advos/kvm-hello-world)
+- References:
+
+	- A useful [discussion](https://zserge.com/posts/kvm/) about a minimal VMM
+	- [`libvirt`](https://libvirt.org/) that abstracts KVM.
+	- [`kvmtool`](https://github.com/kvmtool/kvmtool) which provides a fully-functional, but relatively simple VMM.
+
 # C12: Multicore Atoms and Optimization
 # L13: The Calculus of Scalability
 # C13: Parallelism Case Studies

@@ -1108,7 +1108,128 @@ Now lets go through a simple example of writing a VMM:
 	- [`libvirt`](https://libvirt.org/) that abstracts KVM.
 	- [`kvmtool`](https://github.com/kvmtool/kvmtool) which provides a fully-functional, but relatively simple VMM.
 
-# C12: Multicore Atoms and Optimization
+# C12: Multicore System Atoms and Optimization
+
+We've discussed systems as sets of inter-related and cooperating modules, each both providing and dependent on each other via abstractions encoded in APIs.
+We've seen the pressure that security constraints introduce into the system to motivate extensive inter-module isolation.
+Now we're going to understand the opposite pressure in the system: how modules are required to make their code *more complex* and *more optimized*, which goes against most of the principles for inter-module isolation, and for generating secure systems.
+
+## Understanding Processor Performance
+
+First, lets understand some [key performance metrics](https://github.com/gwu-cs-advos/advos_book/blob/main/doc/c07_parallelism.md#latency-comparison-numbers) to train our intuition.
+Broadly speaking, how long would you expect this to execute:
+
+```c
+// Simple linked list API
+struct ll_head h;
+// ...
+sum = 0;
+for (n = ll_first(&h); !ll_end(&h, n); n = ll_next(n)) {
+	sum += n->data;
+}
+return sum;
+```
+
+*Concepts:*
+
+- cache accesses
+- static branch prediction for loops
+
+```c
+// Simple linked list API
+struct ll_head h;
+// ...
+sum = 0;
+for (n = ll_first(&h); !ll_end(&h, n); n = ll_next(n)) {
+	if (n->data < threshold) {
+		sum += n->data;
+	}
+}
+return sum;
+```
+
+*Concepts:*
+
+- branch misses
+- dynamic branch prediction
+
+**Question: What determines which level of cache in which we access memory?**
+
+*Concepts:*
+
+- working set
+
+```c
+int values[N_VALUES];
+// ...
+sum = 0;
+for (i = 0; i < N_VALUES; i++) {
+	sum += values[i].data;
+}
+return sum;
+```
+
+*Concepts:*
+
+- cache-lines
+- prefetching
+- prefetching vs. WSS
+
+## Atoms of Multicore
+
+- Distributed caches, shared LLC, (NUMA) -- how do they coordinate?
+- Consistency -
+
+	- MESI state machine
+	- Consensus: distributed, *replicated* state (paxos, RAFT)
+
+- Memory ordering
+	*Globals:*
+
+	```c
+	int x = 0;
+	int y = 0;
+	```
+
+	```c
+	// Thread 1:
+	x = 1;
+	return y;
+	```
+
+	```c
+	// Thread 2:
+	y = 1;
+	return x;
+	```
+
+	*Question: What are the potential return values?*
+
+	*Concept:*
+
+	- store buffers
+	- memory barriers
+
+- Coordination
+
+	- Atomic instructions - `cmp&swap` - atomically *load and conditionally store*
+
+- Coordination types:
+
+	- multi-reader
+	- one writer, multiple-reader
+	- multi-read/write
+
+- Locks:
+
+	- naive
+	- ticket
+	- MCS
+
 # L13: The Calculus of Scalability
+
+Does parallelism and concurrency have an impact on API and module design?
+We've seen that it can make modules more complicated, but can it also change their design, and their interface?
+
 # C13: Parallelism Case Studies
 # L14: Project Presentations

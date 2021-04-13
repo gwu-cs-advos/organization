@@ -1208,11 +1208,41 @@ return sum;
 	*Concept:*
 
 	- store buffers
-	- memory barriers
+	- memory barriers (e.g. `asm("lfence")`)
+	- atomic instructions - how can we modify memory conditionally? race after condition?
+
+		```c
+		// example 1:
+		if (*mem == 0) {
+		    // race: another core updates to non-zero here!
+		    *mem = 1;
+		}
+
+		// example 2:
+		local = *mem; // read memory -> register
+		local++;      // compute on register value
+		              // Race: another core updates mem
+		*mem = local; // write register out to memory
+		```
 
 - Coordination
 
-	- Atomic instructions - `cmp&swap` - atomically *load and conditionally store*
+	- Memory barriers
+	- Atomic instructions - `cmp&swap` - atomically *load and conditionally store*.
+
+        ```c
+		bool cmp_and_swap(*mem, old, updated):
+		    if *mem == old:     // load
+			    *mem = updated; // conditionally update
+				return 1;       // ret condition result
+			else:
+			    return 0;       // ret condition result
+		```
+
+		```c
+		// but, you know, in assembly
+		asm("cmpxchg %mem, %old, %updated"); // where mem, old, updated are actual registers
+		```
 
 - Coordination types:
 

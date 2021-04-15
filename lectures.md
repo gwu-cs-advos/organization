@@ -1272,15 +1272,21 @@ We'll dive into this and get an intuition about how optimization impacts module 
 	- *S*: serial performance for an operation for a single thread
 	- *P(x)*: parallel performance of an operation for each of *x* threads
 	- Note: *S = P(1)*
-	- A module implementation is **scalable** up to *N* cores if *∀ 1 ≤ x ≤ N, x × P(x) ≥ x × P(x-1)*
+	- A module implementation is **scalable** up to *N* cores if
+
+		> ∀ 1 ≤ x ≤ N, x × P(x) ≥ x × P(x-1)
 
 		- In english: Adding more cores increases performance for each core added
 
-    - A module implementation is **linearly scalable** up to *N* cores if *∀ 1 ≤ x ≤ N, ∃ 1 ≥ C > 0, x × P(x) ≥  C × (x × P(1))*
+    - A module implementation is **linearly scalable** up to *N* cores if
+
+		> ∀ 1 ≤ x ≤ N, ∃ 1 ≥ C > 0, x × P(x) ≥  C × (x × P(1))
 
 		- In english: adding a core increases performance linearly
 
-    - A module implementation is **perfectly scalable** up to *N* cores if *∀ 1 ≤ x ≤ N, x × P(x) = x × P(1)*
+    - A module implementation is **perfectly scalable** up to *N* cores if
+
+		> ∀ 1 ≤ x ≤ N, x × P(x) = x × P(1)
 
 		- In english: adding a core increases performance by exactly a core's capacity
 
@@ -1314,7 +1320,7 @@ We'll dive into this and get an intuition about how optimization impacts module 
 
 	- If two interface operations commute, they *can* be implemented scalably
 
-		- *f(x) = a, g(y) = b*, *g(y) = b, f(x) = a* (for the same `x`, `y`, `a`, `b`)
+		- *f(x) = a, g(y) = b*, *g(y) = b, f(x) = a* (for the same *x*, *y*, *a*, *b*)
 		- Why?
 
 	- Review for examples above

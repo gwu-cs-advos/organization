@@ -1209,7 +1209,9 @@ return sum;
 
 	- store buffers
 	- memory barriers (e.g. `asm("lfence")`)
-	- atomic instructions - how can we modify memory conditionally? race after condition?
+	- atomic instructions - execute load, operation, and store, *atomically*.
+
+- Atomic instructions: how can we modify memory conditionally while avoiding inter-thread races?
 
 		```c
 		// example 1:
@@ -1223,7 +1225,6 @@ return sum;
 		local++;      // compute on register value
 		              // Race: another core updates mem
 		*mem = local; // write register out to memory
-		```
 
 - Coordination
 
@@ -1243,7 +1244,6 @@ return sum;
 		// but, you know, in assembly
 		asm("cmpxchg %mem, %old, %updated"); // where mem, old, updated are actual registers
 		```
-
 - Coordination types:
 
 	- multi-reader
@@ -1260,6 +1260,70 @@ return sum;
 
 Does parallelism and concurrency have an impact on API and module design?
 We've seen that it can make modules more complicated, but can it also change their design, and their interface?
+We'll dive into this and get an intuition about how optimization impacts module and API design.		```
+
+- Locks/mutual exclusion -- two overheads:
+
+	- Critical section/mutual exclusion -- sequentialize parallel cores (perf. limited by Amdahl's law)
+	- Cache-coherency overheads (lock cache-line, and data-section cache-lines)
+
+- Scalability:
+
+	- *S*: serial performance for an operation for a single thread
+	- *P(x)*: parallel performance of an operation for each of *x* threads
+	- Note: *S = P(1)*
+	- A module implementation is **scalable** up to *N* cores if *∀ 1 ≤ x ≤ N, x × P(x) ≥ x × P(x-1)*
+
+		- In english: Adding more cores increases performance for each core added
+
+    - A module implementation is **linearly scalable** up to *N* cores if *∀ 1 ≤ x ≤ N, ∃ 1 ≥ C > 0, x × P(x) ≥  C × (x × P(1))*
+
+		- In english: adding a core increases performance linearly
+
+    - A module implementation is **perfectly scalable** up to *N* cores if *∀ 1 ≤ x ≤ N, x × P(x) = x × P(1)*
+
+		- In english: adding a core increases performance by exactly a core's capacity
+
+## How do we say if an implementation is scalable?
+
+- Examples:
+
+	- SQLite (common DB):
+
+		- OCC for reads, lock for modifications
+		- `SELECT`: scalable for most systems
+		- `UPDATE`: the speed of a single core
+		- `SELECT` & `UPDATE` in parallel?
+
+	- UNIX policy for creating a new `fd`
+
+	    > A new file descriptor has the lowest available integer value
+
+		Assumed in some shell implementations.
+		See `sh.c` and use of `dup` in `xv6`.
+
+	    Implementation: lock for FD table -> not scalable
+
+		- Modification:
+
+		    > A few file descriptor has *any* available value
+
+		    Implementation: *can* partition FD table across cores, *separate locks* -> scalable
+
+- Scalability commutativity rule
+
+	- If two interface operations commute, they *can* be implemented scalably
+
+		- *f(x) = a, g(y) = b*, *g(y) = b, f(x) = a* (for the same `x`, `y`, `a`, `b`)
+		- Why?
+
+	- Review for examples above
+
+- Wrapup
+
+	- Module interfaces should avoid *leaky abstractions* where performance/scalability are important
+	- SQLite publishes scalability properties
+	- Linux: `dup2` was created to enable the selection of `fd` so that allocation could be loosened, considered [changes](https://lwn.net/Articles/787473/).
 
 # C13: Parallelism Case Studies
 # L14: Project Presentations

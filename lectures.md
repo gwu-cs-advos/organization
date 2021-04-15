@@ -1273,6 +1273,10 @@ We'll dive into this and get an intuition about how optimization impacts module 
 	- *S*: serial performance for an operation for a single thread
 	- *P(x)*: parallel performance of an operation for each of *x* threads
 	- Note: *S = P(1)*
+	- An operation that is mutually exclusive, thus *not scalable*:
+
+		> ∀ x, P(x) = P(1) × x
+
 	- A module implementation is **scalable** up to *N* cores if
 
 		> ∀ 1 ≤ x ≤ N, P(x)/x ≥ P(x-1)/x

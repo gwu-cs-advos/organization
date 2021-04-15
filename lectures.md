@@ -1279,7 +1279,7 @@ We'll dive into this and get an intuition about how optimization impacts module 
 
 	- A module implementation is **scalable** up to *N* cores if
 
-		> ∀ 1 ≤ x ≤ N, P(x)/x ≥ P(x-1)/x
+		> ∀ 1 ≤ x ≤ N, P(x)/x ≥ P(x-1)/(x-1)
 
 		- In english: Adding more cores increases performance for each core added
 

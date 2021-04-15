@@ -1213,19 +1213,19 @@ return sum;
 
 - Atomic instructions: how can we modify memory conditionally while avoiding inter-thread races?
 
-		```c
-		// example 1:
-		if (*mem == 0) {
-		    // race: another core updates to non-zero here!
-		    *mem = 1;
-		}
+	```c
+	// example 1:
+	if (*mem == 0) {
+	    // race: another core updates to non-zero here!
+	    *mem = 1;
+	}
 
-		// example 2:
-		local = *mem; // read memory -> register
-		local++;      // compute on register value
+	// example 2:
+	local = *mem; // read memory -> register
+	local++;      // compute on register value
 		              // Race: another core updates mem
-		*mem = local; // write register out to memory
-		```
+	*mem = local; // write register out to memory
+	```
 
 - Coordination
 

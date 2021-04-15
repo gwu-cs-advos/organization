@@ -1275,21 +1275,21 @@ We'll dive into this and get an intuition about how optimization impacts module 
 	- Note: *S = P(1)*
 	- A module implementation is **scalable** up to *N* cores if
 
-		> ∀ 1 ≤ x ≤ N, x × P(x) ≥ x × P(x-1)
+		> ∀ 1 ≤ x ≤ N, P(x)/x ≥ P(x-1)/x
 
 		- In english: Adding more cores increases performance for each core added
 
     - A module implementation is **linearly scalable** up to *N* cores if
 
-		> ∀ 1 ≤ x ≤ N, ∃ 1 ≥ C > 0, x × P(x) ≥  C × (x × P(1))
+		> ∀ 1 ≤ x ≤ N, ∃ 1 ≥ C > 0, P(x)/x ≥  C × P(1)/x
 
 		- In english: adding a core increases performance linearly
 
     - A module implementation is **perfectly scalable** up to *N* cores if
 
-		> ∀ 1 ≤ x ≤ N, x × P(x) = x × P(1)
+		> ∀ 1 ≤ x ≤ N, P(x)/x = P(1)/x
 
-		- In english: adding a core increases performance by exactly a core's capacity
+		- In english: adding a core doesn't increase each operation's performance, thus increases performance by exactly a core's capacity
 
 ## How do we say if an implementation is scalable?
 

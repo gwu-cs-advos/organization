@@ -1225,6 +1225,7 @@ return sum;
 		local++;      // compute on register value
 		              // Race: another core updates mem
 		*mem = local; // write register out to memory
+		```
 
 - Coordination
 

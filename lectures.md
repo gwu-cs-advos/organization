@@ -1260,7 +1260,7 @@ return sum;
 
 Does parallelism and concurrency have an impact on API and module design?
 We've seen that it can make modules more complicated, but can it also change their design, and their interface?
-We'll dive into this and get an intuition about how optimization impacts module and API design.		```
+We'll dive into this and get an intuition about how optimization impacts module and API design.
 
 - Locks/mutual exclusion -- two overheads:
 

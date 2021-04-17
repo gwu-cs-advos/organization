@@ -488,28 +488,32 @@ References:
 - Don't forget that [`send_msg`](https://github.com/gwu-cs-advos/NOVA/blob/arm/src/x86_64/syscall.cpp#L81-L109) is very general and uses template magic to contain the continuation to use for execution when you *return to the calling ec (thread)*.
 - Also remember that the "arguments" and return values are passed from the client into the server's `utcb` (user-level thread control block).
 
-## C12:
+## C13: `memcached`
+
+One of the most common pieces of cloud infrastructure is distributed caches.
+When accessing some object (a post on social media, a user profile, a product, etc...), it can be *very* expensive to go out to the database.
+Instead, cloud systems will *cache* these values in dedicated machines.
+Thus, only when the caches don't hold an item, do you need to go out to the database.
+One of the most common distributed caches is [`memcached`](https://github.com/memcached/memcached).
+`memcached` is, at its core, just
+
+1. a hash table mapping keys to values for fast access, and
+2. a "least-recently used" caching policy that will drop items that were accessed furthest into the past when the cache runs out of room.
+
+To enable the maximum number if items to be stored, `memcached` also provides its own [slab allocator](https://www.youtube.com/watch?v=DRAHRJEAEso).
+`memcached` is multithreaded and can be used across many cores.
+Thus, it attempts to provide a scalable implementation.
 
 Questions (complete in the provided form):
 
-- TBD
+- In a common operation on the hashtable (get or put), how are locks used?
+    How does the system attempt to use locks in a way that is scalable?
+    You can avoid looking into the use of locks for things like maintanance, hash-table resizing, etc...
 
 References:
 
-- [TBD](TBD).
-	Starting point help: TBD.
-
-## L13:
-
-Questions (complete in the provided form):
-
-- TBD
-
-References:
-
-- Lecture [video](TBD).
-- See Section on "" in the book.
-
+- Most relevant code is in thread.c, items.c, and assoc.c
+ 
 # Project
 
 The purpose of the project is to dive into a core system technology and answer a set of questions:

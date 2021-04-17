@@ -34,5 +34,5 @@ Note that you should reference/read/complete the work in "resources & work" at l
 | R4.08 | Nova Integration with VMX                        | [L12](./work.md#l12-nova-vmx-interface)                              |
 | T4.13 | Multicore System Atoms and Optimization          | C12                                                                  |
 | R4.15 | The Calculus of Scalability                      | L13                                                                  |
-| T4.20 | Case stuidies: `parsec`, memcached, jemalloc     | [C13](./work.md#l13-memcached)                                        |
+| T4.20 | Case stuidies: `parsec`, memcached, jemalloc     | [C13](./work.md#c13-memcached)                                       |
 | R4.22 | Final Presentations                              | [spec](./work.md#project)                                            |

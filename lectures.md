@@ -1279,7 +1279,7 @@ We'll dive into this and get an intuition about how optimization impacts module 
 
 	- A module implementation is **scalable** up to *N* cores if
 
-		> ∀ 1 ≤ x ≤ N, P(x)/x ≥ P(x-1)/x
+		> ∀ 1 ≤ x ≤ N, P(x)/x ≥ P(x-1)/(x-1)
 
 		- In english: Adding more cores increases performance for each core added
 
@@ -1360,9 +1360,31 @@ Which operations *should potentially* be able to scale?
 - Could the system fail to scale? In which cases?
 - Could we change it to scale in some cases?
 
-*Notable files:*
+*Notable files, functions, and operations:*
+- `thread.c`, `items.c`, and `assoc.c`
+- `get`: `item_get`
+- `put`: `item_replace`
+- HT: `item_lock`
+- LRU: `do_item_link` -> `item_link_q`
+
+Lock ordering:
+
+1. ht
+2. lru
+
+- But what about eviction?
+- Deadlock?
+
+    - Hint: what does `trylock` do?
+
+- Why not use read/write locks?
+Can't `get` use a read-lock?
+- Why use locks on `get` at all?
 
 ## `jemalloc` Concepts
+
+*Analysis: commutativity?*
+Which operations *should potentially* be able to scale?
 
 What does the *fastpath* look like?
 Lets start with `je_malloc`.
@@ -1378,3 +1400,5 @@ Lower the likelihood of needing to take the lock.
 Similar to the motivation for `memcached`!!!
 
 # L14: Project Presentations
+
+Shower insight into awesome systems onto the rest of the class!

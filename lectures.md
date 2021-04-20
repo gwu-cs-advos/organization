@@ -1337,4 +1337,44 @@ We'll dive into this and get an intuition about how optimization impacts module 
 	- Linux: `dup2` was created to enable the selection of `fd` so that allocation could be loosened, considered [changes](https://lwn.net/Articles/787473/).
 
 # C13: Parallelism Case Studies
+
+## `memcached` Organization
+
+Operations:
+
+- `get(key)` - get *value* associated with a *key*
+- `put(key, value)` - add an entry into the cache, associating *key* to *value* (potentially overwriting)
+
+Service features:
+
+- Cache -- evictions based on LRU(ish)
+- Timeout/aging of entries
+- Debugging/profiling
+
+*Analysis: commutativity?*
+Which operations *should potentially* be able to scale?
+
+**Lock structure.**
+
+- What is the lock structure of `memcached`?
+- Could the system fail to scale? In which cases?
+- Could we change it to scale in some cases?
+
+*Notable files:*
+
+## `jemalloc` Concepts
+
+What does the *fastpath* look like?
+Lets start with `je_malloc`.
+Notes:
+
+- `tsd_tcachep_get` and other forms of "Thread-Specific Data" (tsd) are created by macros in `tsd.h` (e.g. line 324).
+- `pthread_getspecific` is a way to get *thread local data* (or TLS, "thread-local state") which are separate sets of variables for each thread.
+- What is with the shared use of `cache_bin_alloc_impl`?
+- For the non-fast-path, we end up (for small allocations) in `arena_malloc_small`.
+
+Example of a fastpath that avoids inter-core coordination, and a slowpath that uses locks and coordinates between threads.
+Lower the likelihood of needing to take the lock.
+Similar to the motivation for `memcached`!!!
+
 # L14: Project Presentations

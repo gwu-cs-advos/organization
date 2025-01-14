@@ -50,7 +50,7 @@ Please fill out the required form for deadlines by noon on the day of the deadli
 | T2.25 | composite design             | [demikernel](https://github.com/gwu-cs-advos/organization/blob/main/class.md#7-demikernel)             |
 | R2.27 | isolation                    |                                                                                                        |
 | T3.04 | composite runtime            | [composite kernel](https://github.com/gwu-cs-advos/organization/blob/main/class.md#8-composite-kernel) |
-| R3.06 | interface design             |                                                                                                        |
+| R3.06 | interface design             | [UNIX Service](https://github.com/gwu-cs-advos/organization/blob/main/class.md#1-unix-service)         |
 | T3.11 | Spring recess                |                                                                                                        |
 | R3.13 | Spring recess                |                                                                                                        |
 | T3.18 | composite scheduling         | [composite crt](https://github.com/gwu-cs-advos/organization/blob/main/class.md#9-composite-crt)       |
@@ -140,7 +140,11 @@ Some examples:
 - Provide a routing service to connect a client to another program (similar to the nameserver), but with an emphasis on enabling this communication to be local (on the machine), or remote (via network sockets) based on where the other program is located.
 - Provide something similar to a [9p service](https://en.wikipedia.org/wiki/9P_(protocol)) to access a virtual (user-level service controlled) file system image.
   The service speaks 9p with the client, and shares `fd`s to provide direct access to files.
+- Provide an LLM service with per-client context and replies; the shared file descriptor might be a scratchpad of the entire conversation with each client.
 - ...
+
+Detail what you've done in the `README.md`, including who worked on what part.
+Provide high-level context for what your service's goals are, what it is trying to do, how it uses 1-5 above, and some very high-level documentation into the design with links to the corresponding code.
 
 # Grading
 

@@ -1,0 +1,793 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+
+        
+
+        <link rel="stylesheet" href="assets/reveal-js/dist/reveal.css" />
+
+        
+            <link rel="stylesheet" href="assets/theme.css" />
+        
+        
+            <link rel="stylesheet" href="assets/nord.css" />
+        
+
+        
+            
+        
+    </head>
+    <body>
+        <div class="reveal">
+            <div class="slides">
+                <section data-markdown
+                
+                    data-separator-vertical="^\s*-v-\s*$"
+                
+                    data-separator-notes="^Notes?:"
+                
+                >
+                    <textarea data-template>
+                        # Tactical Coding
+
+<div class="center">
+
+**Gabe Parmer**
+
+© Gabe Parmer, 2025, All rights reserved
+
+</div>
+
+---
+
+## Tactical Coding???
+
+- Variables & naming
+- Error handling
+- Function size
+- Function organization
+
+---
+
+## Error Handling: Logical Structure in a Function
+
+How should error handling be integrated into function logic?
+
+---
+
+```c [1-5|7-8|13-14|16-17|19-23|25]
+int sock; /* main socket for requests */
+pthread_mutex_t client_lock;
+struct client {
+	/* global client data */
+} clients[NPROCS];
+
+int
+handle_client(void)
+{
+	int fd, client_id;
+	struct request *req;
+
+	fd = accept(sock);
+	if (fd < 0) return fd;
+
+	resp = malloc(sizeof(struct request));
+	if (!resp) return -ENOMEM;
+
+	mutex_lock(&client_lock);
+	client_id = process_req(fd, req);
+	if (client_id < 0) return -EINVAL;
+	process_client_request(clients[client_id], req);
+	mutex_unlock(&client_lock);
+
+	return 0;
+}
+```
+
+---
+
+# Bugs?
+
+---
+
+```c [31|17-20|24-27]
+int sock; /* main socket for requests */
+pthread_mutex_t client_lock;
+struct client {
+	/* global client data */
+} clients[NPROCS];
+
+int
+handle_client(void)
+{
+	int fd, client_id;
+	struct request *req;
+
+	fd = accept(sock);
+	if (fd < 0) return fd;
+
+	resp = malloc(sizeof(struct request));
+	if (!resp) {
+		close(fd);
+		return -ENOMEM;
+	}
+
+	mutex_lock(&client_lock);
+	client_id = process_req(fd, req);
+	if (client_id < 0) {
+		close(fd);
+		return -EINVAL;
+	}
+	process_client_request(clients[client_id], req);
+	mutex_unlock(&client_lock);
+
+	close(fd);
+
+	return 0;
+}
+```
+
+---
+
+```c [32|24-28]
+int sock; /* main socket for requests */
+pthread_mutex_t client_lock;
+struct client {
+	/* global client data */
+} clients[NPROCS];
+
+int
+handle_client(void)
+{
+	int fd, client_id;
+	struct request *req;
+
+	fd = accept(sock);
+	if (fd < 0) return fd;
+
+	resp = malloc(sizeof(struct request));
+	if (!resp) {
+		close(fd);
+		return -ENOMEM;
+	}
+
+	mutex_lock(&client_lock);
+	client_id = process_req(fd, req);
+	if (client_id < 0) {
+		close(fd);
+		free(resp);
+		return -EINVAL;
+	}
+	process_client_request(clients[client_id], req);
+	mutex_unlock(&client_lock);
+
+	free(resp);
+	close(fd);
+
+	return 0;
+}
+```
+
+---
+
+```c [31|24-29]
+int sock; /* main socket for requests */
+pthread_mutex_t client_lock;
+struct client {
+	/* global client data */
+} clients[NPROCS];
+
+int
+handle_client(void)
+{
+	int fd, client_id;
+	struct request *req;
+
+	fd = accept(sock);
+	if (fd < 0) return fd;
+
+	resp = malloc(sizeof(struct request));
+	if (!resp) {
+		close(fd);
+		return -ENOMEM;
+	}
+
+	mutex_lock(&client_lock);
+	client_id = process_req(fd, req);
+	if (client_id < 0) {
+		mutex_unlock(&client_lock);
+		close(fd);
+		free(resp);
+		return -EINVAL;
+	}
+	process_client_request(clients[client_id], req);
+	mutex_unlock(&client_lock);
+
+	free(resp);
+	close(fd);
+
+	return 0;
+}
+```
+
+---
+
+```c [22-31|23]
+int sock; /* main socket for requests */
+pthread_mutex_t client_lock;
+struct client {
+	/* global client data */
+} clients[NPROCS];
+
+int
+handle_client(void)
+{
+	int fd, client_id;
+	struct request *req;
+
+	fd = accept(sock);
+	if (fd < 0) return fd;
+
+	resp = malloc(sizeof(struct request));
+	if (!resp) {
+		close(fd);
+		return -ENOMEM;
+	}
+
+	mutex_lock(&client_lock);
+	client_id = process_req(fd, req);
+	if (client_id < 0) {
+		mutex_unlock(&client_lock);
+		close(fd);
+		free(resp);
+		return -EINVAL;
+	}
+	process_client_request(clients[client_id], req);
+	mutex_unlock(&client_lock);
+
+	free(resp);
+	close(fd);
+
+	return 0;
+}
+```
+
+---
+
+## Error Handling Resources
+
+- File descriptors
+- Allocated memory (in non-GCed lang)
+- Reference count decrease
+- Lock release
+- Partial work cleanup
+
+---
+
+```c [28-30]
+int sock; /* main socket for requests */
+pthread_mutex_t client_lock;
+struct client {
+	/* global client data */
+} clients[NPROCS];
+
+int
+handle_client(void)
+{
+	int fd, client_id;
+	struct request *req;
+
+	fd = accept(sock);
+	if (fd < 0) return fd;
+
+	resp = malloc(sizeof(struct request));
+	if (!resp) {
+		close(fd);
+		return -ENOMEM;
+	}
+
+	client_id = process_req(fd, req);
+	if (client_id < 0) {
+		close(fd);
+		free(resp);
+		return -EINVAL;
+	}
+	mutex_lock(&client_lock);
+	process_client_request(clients[client_id], req);
+	mutex_unlock(&client_lock);
+
+	free(resp);
+	close(fd);
+
+	return 0;
+}
+```
+
+---
+
+```c [37|7-14]
+int sock; /* main socket for requests */
+pthread_mutex_t client_lock;
+struct client {
+	/* global client data */
+} clients[NPROCS];
+
+/* Abstract away client access */
+void
+process_client_request(int client_id, struct request *r)
+{
+	mutex_lock(&client_lock);
+	/* process `clients[client_id]` with `req` */
+	mutex_unlock(&client_lock);
+}
+
+int
+handle_client(void)
+{
+	int fd, client_id;
+	struct request *req;
+
+	fd = accept(sock);
+	if (fd < 0) return fd;
+
+	resp = malloc(sizeof(struct request));
+	if (!resp) {
+		close(fd);
+		return -ENOMEM;
+	}
+
+	client_id = process_req(fd, req);
+	if (client_id < 0) {
+		close(fd);
+		free(resp);
+		return -EINVAL;
+	}
+	process_client_request(client_id, req);
+
+	free(resp);
+	close(fd);
+
+	return 0;
+}
+```
+
+---
+
+## Error Handling: Centralize Error Logic
+
+But the code is still bad. We need to simplify its structure.
+
+---
+
+```c [38-42|19|26-29|32-35]
+int sock; /* main socket for requests */
+pthread_mutex_t client_lock;
+struct client {
+	/* global client data */
+} clients[NPROCS];
+
+/* Abstract away client access */
+void
+process_client_request(int client_id, struct request *r)
+{
+	mutex_lock(&client_lock);
+	/* process `clients[client_id]` with `req` */
+	mutex_unlock(&client_lock);
+}
+
+int
+handle_client(void)
+{
+	int fd, client_id, err = 0;
+	struct request *req;
+
+	fd = accept(sock);
+	if (fd < 0) return fd;
+
+	resp = malloc(sizeof(struct request));
+	if (!resp) {
+		err = -ENOMEM;
+		goto release_fd;
+	}
+
+	client_id = process_req(fd, req);
+	if (client_id < 0) {
+		err = -EINVAL;
+		goto release_mem;
+	}
+	process_client_request(client_id, req);
+
+release_mem:
+	free(resp);
+release_fd:
+	close(fd);
+	return err;
+}
+```
+
+---
+
+```c [26,29|19-36]
+int sock; /* main socket for requests */
+pthread_mutex_t client_lock;
+struct client {
+	/* global client data */
+} clients[NPROCS];
+
+/* Abstract away client access */
+void
+process_client_request(int client_id, struct request *r)
+{
+	mutex_lock(&client_lock);
+	/* process `clients[client_id]` with `req` */
+	mutex_unlock(&client_lock);
+}
+
+int
+handle_client(void)
+{
+	int fd, client_id, err = 0;
+	struct request *req;
+
+	fd = accept(sock);
+	if (fd < 0) return fd;
+
+	resp = malloc(sizeof(struct request));
+	if (!resp) ERR_THROW(err, -ENOMEM, release_fd);
+
+	client_id = process_req(fd, req);
+	if (client_id < 0) ERR_THROW(err, -EINVAL, release_mem);
+	process_client_request(client_id, req);
+
+release_mem:
+	free(resp);
+release_fd:
+	close(fd);
+	return err;
+}
+```
+
+---
+
+## Programming Language Support
+
+- `go`: `defer` statements
+- `rust`: `Drop` trait auto-execution on scope exit
+- `c++`: RAII destructor execution on scope exit
+- `c`: [`cleanup` attributes](https://lwn.net/Articles/934679/) help with this
+- `java`: `AutoCloseable` interface and "try-with-resources" pattern, and/or`finally` blocks
+
+---
+
+## Error Handling Goals
+
+1. Do as much error handling at the start of the function as possible (why?).
+2. Try and make the error handling as simple (and visually small) as possible.
+
+---
+
+## Error Propagation *Between* Functions
+
+When a function triggers an error, *how does a calling function handle it*?
+- Exceptions
+- Structured return values
+
+---
+
+## Error Codes
+
+Standard errors have specific values in `errno.h` (in `/usr/include/errno.h` which includes a number of other files).
+
+```c
+/* SPDX-License-Identifier: GPL-2.0 WITH Linux-syscall-note */
+#ifndef _ASM_GENERIC_ERRNO_BASE_H
+#define _ASM_GENERIC_ERRNO_BASE_H
+
+#define	EPERM		 1	/* Operation not permitted */
+#define	ENOENT		 2	/* No such file or directory */
+#define	ESRCH		 3	/* No such process */
+#define	EINTR		 4	/* Interrupted system call */
+#define	EIO		 5	/* I/O error */
+#define	ENXIO		 6	/* No such device or address */
+#define	E2BIG		 7	/* Argument list too long */
+#define	ENOEXEC		 8	/* Exec format error */
+#define	EBADF		 9	/* Bad file number */
+#define	ECHILD		10	/* No child processes */
+#define	EAGAIN		11	/* Try again */
+#define	ENOMEM		12	/* Out of memory */
+#define	EACCES		13	/* Permission denied */
+#define	EFAULT		14	/* Bad address */
+#define	ENOTBLK		15	/* Block device required */
+#define	EBUSY		16	/* Device or resource busy */
+#define	EEXIST		17	/* File exists */
+#define	EXDEV		18	/* Cross-device link */
+#define	ENODEV		19	/* No such device */
+#define	ENOTDIR		20	/* Not a directory */
+#define	EISDIR		21	/* Is a directory */
+#define	EINVAL		22	/* Invalid argument */
+#define	ENFILE		23	/* File table overflow */
+#define	EMFILE		24	/* Too many open files */
+#define	ENOTTY		25	/* Not a typewriter */
+#define	ETXTBSY		26	/* Text file busy */
+#define	EFBIG		27	/* File too large */
+#define	ENOSPC		28	/* No space left on device */
+#define	ESPIPE		29	/* Illegal seek */
+#define	EROFS		30	/* Read-only file system */
+#define	EMLINK		31	/* Too many links */
+#define	EPIPE		32	/* Broken pipe */
+#define	EDOM		33	/* Math argument out of domain of func */
+#define	ERANGE		34	/* Math result not representable */
+
+#endif
+```
+
+---
+
+
+<div class="multicolumn">
+<div>
+
+## Custom Error Codes
+
+Define your own *application-specific* error codes (from `cos_errno.h`).
+
+</div><div>
+
+```c [26-30]
+#ifndef EINVAL
+#define EINVAL 22
+#endif
+#ifndef ENOMEM
+#define ENOMEM 12
+#endif
+#ifndef EAGAIN
+#define EAGAIN 11
+#endif
+#ifndef EEXIST
+#define EEXIST 17
+#endif
+#ifndef EPERM
+#define EPERM 1
+#endif
+#ifndef EBUSY
+#define EBUSY 16
+#endif
+#ifndef ENOENT
+#define ENOENT 2
+#endif
+#ifndef EOVERFLOW
+#define EOVERFLOW 75
+#endif
+
+/* Offset the cases defined in dietlibc. */
+#define ERRNOBASE 256
+
+#define EQUIESCENCE (ERRNOBASE + 0)
+#define ECASFAIL (ERRNOBASE + 1)
+```
+
+</div></div>
+
+---
+
+## C Return Conventions
+
+Return values:
+- `int`
+  - `0` = success,
+  - `>0` = useful integer (handle, fd, etc...),
+  - `<0` = -errno
+- `cos_retval_t` - same, but with explicit type
+
+---
+
+## Handling Errors
+
+Simple support to "pass errors through" to calling functions.
+
+---
+
+```c [1-8|1-2|3-7]
+	ret = foo();
+	if (ret < 0) return ret;
+	ret = bar();
+	if (ret < 0) ERR_THROW_RET(cleanup);
+	/* ... */
+cleanup:
+	cleanup_resources(/* ... */);
+	return ret;
+```
+
+---
+
+```c []
+	CHECK(foo());
+	CHECK_THROW(bar(), cleanup);
+	/* ... */
+cleanup:
+	cleanup_resources(/* ... */);
+	return ret;
+```
+
+---
+
+## Program Language support
+
+Language support for "pass-through errors"
+- `rust`: `?` operator
+- `java`, `c++`: exceptions
+
+Easy to have errors if you aren't careful about resource cleanup
+
+---
+
+## Assert/Panic vs. Error Handling
+
+`CHECK(foo());` vs. `assert(foo());`?
+
+---
+
+## Assert/Panic vs. Error Handling
+
+Assertions:
+- Checking *internal invariants in your code*
+- Should not be triggerable unless there's a bug in your component
+
+Error handling:
+- Checking properties of client requests/function arguments
+- Not the responsibility of the client to pass "sane" arguments
+
+---
+
+## How Large Should a Function/Method Be?
+
+---
+
+## Function Size
+
+Source Lines of Code (SLoC) is an imperfect metric
+- correlated with complexity
+- but not perfect...
+- long functions are sometimes easier to read - tell a story
+
+Need a better metric than SLoC
+
+---
+
+## Memory Limitations
+
+Short term memory: $7 \pm 2$ items
+
+> Code should be designed to be read, thus must consider this limitation.
+
+Each
+- variable
+- condition
+- loop
+
+---
+
+## Proxy for Memory Pressure
+
+Indentation-level (in C)
+- *Linus*: function shouldn't nest no more than 4 times.
+- Each condition and/or loop consumes memory
+
+Implications:
+- Core logic should be "straight-shot", no or little indentation
+- Errors should be handled ASAP, nesting should be for error handling
+- Deep logic should be moved to new functions (with useful names)
+
+---
+
+```c [26,27,31]
+/**
+ * `resource_comp_create`: An example of resource creation for a
+ * component resource. This requires 1. addressing the capability
+ * table entry to add, and 2. the page-table entry that points to your
+ * untyped memory to use for the resource. Additionally, it takes
+ * references to all of the resources that you need to create the
+ * resource. In this case, this, includes the capability table,
+ * page-table, protection domain, and entry instruction pointer for
+ * the component.
+ *
+ * - `@captbl_ref` - the capability table to use for the component
+ * - `@pgtbl_ref` - the page-table to use for the component
+ * - `@pd` - the protection domain information to use for the component
+ * - `@entry_ip` - the instruction pointer to use for thread creation
+ *   in the component
+ * - `@untyped_src_ref` - the untyped memory to use for the component
+ * - `@return` - normal return value denoting error (negative values), or success (zero)
+ */
+cos_retval_t
+resource_comp_create(captbl_ref_t captbl_ref, pgtbl_ref_t pgtbl_ref, prot_domain_tag_t pd, vaddr_t entry_ip, pageref_t untyped_src_ref)
+{
+	struct page_type *ptype, *pt_ptype, *ct_ptype;
+	struct page *c_page;
+	struct component *c;
+
+	COS_CHECK(page_resolve(pgtbl_ref, COS_PAGE_TYPE_KERNEL, COS_PAGE_KERNTYPE_PGTBL_0, NULL, NULL, &pt_ptype));
+	COS_CHECK(page_resolve(captbl_ref, COS_PAGE_TYPE_KERNEL, COS_PAGE_KERNTYPE_CAPTBL_0, NULL, NULL, &ct_ptype));
+
+	ref2page(untyped_src_ref, &c_page, &ptype);
+	/* Retype the page, and if we don't unreserve the capability */
+	COS_CHECK(page_retype_from_untyped_reserve(ptype, c_page, COS_PAGE_TYPE_KERNEL, COS_PAGE_KERNTYPE_COMP));
+
+	/* Take the references for the component's constituent captbl/pgtbl */
+	faa32(&pt_ptype->refcnt, 1);
+	faa32(&ct_ptype->refcnt, 1);
+
+	c = (struct component *)c_page;
+	/* Update the component structure in recently retyped page */
+	*c = (struct component) {
+		.pgtbl    = pgtbl_ref,
+		.captbl   = captbl_ref,
+		.pd_tag   = pd,
+		.entry_ip = entry_ip,
+		.fault_handler = { NULL }
+	};
+	/* Make the kernel resource accessible as a component */
+	page_retype_from_untyped_commit(ptype, c_page, COS_PAGE_TYPE_KERNEL);
+
+	/*
+	 * Note that the reference count of the component page hasn't
+	 * changed as we're both removing (a page-table reference) and
+	 * adding a (capability-table) reference.
+	 */
+
+	return COS_RET_SUCCESS;
+}
+```
+                    </textarea>
+                </section>
+            </div>
+        </div>
+        <script src="assets/reveal-js/dist/reveal.js"></script>
+        <script src="assets/reveal-js/plugin/markdown/markdown.js"></script>
+        <script src="assets/reveal-js/plugin/highlight/highlight.js"></script>
+        <script src="assets/reveal-js/plugin/zoom/zoom.js"></script>
+        <script src="assets/reveal-js/plugin/notes/notes.js"></script>
+        <script src="assets/reveal-js/plugin/math/math.js"></script>
+
+        
+            
+                
+                    
+                        <script src="https://cdn.jsdelivr.net/npm/reveal.js-mermaid-plugin/plugin/mermaid/mermaid.min.js"></script>
+                    
+                
+            
+        
+
+        <script>
+            Reveal.initialize({
+                
+                    
+                        history: true,
+                    
+                        slideNumber: "c/t",
+                    
+                        transition: "fade",
+                    
+                
+                plugins: [
+                    RevealMarkdown,
+                    RevealHighlight,
+                    RevealZoom,
+                    RevealNotes,
+                    RevealMath,
+
+                    
+                        
+                            
+                                RevealMermaid,
+                            
+                        
+                    
+                ],
+            });
+        </script>
+    </body>
+</html>

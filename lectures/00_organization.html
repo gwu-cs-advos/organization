@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+
+        
+
+        <link rel="stylesheet" href="assets/reveal-js/dist/reveal.css" />
+
+        
+            <link rel="stylesheet" href="assets/theme.css" />
+        
+        
+            <link rel="stylesheet" href="assets/nord.css" />
+        
+
+        
+            
+        
+    </head>
+    <body>
+        <div class="reveal">
+            <div class="slides">
+                <section data-markdown
+                
+                    data-separator-vertical="^\s*-v-\s*$"
+                
+                    data-separator-notes="^Notes?:"
+                
+                >
+                    <textarea data-template>
+                        # Advanced Operating Systems
+
+<div class="center">
+
+**Gabe Parmer**
+
+© Gabe Parmer, 2024, All rights reserved
+
+</div>
+
+---
+
+<div class="center">
+
+# Gabe 👋
+
+</div>
+
+---
+
+## Concepts
+
+- Complexity, system structure, and interfaces
+- Interface and system design
+- Isolation and security
+- Concurrency and parallelism
+
+---
+
+## Skills
+
+- Reading & understanding code
+- Practicing and applying system design
+- Understand the design of a microkernel
+- Design and implement OS features
+
+---
+
+## Prerequisites
+
+- ‼️ Comfortable & experienced with one of C/C++/Rust
+  - **Reading large C codebases**
+  - **Writing C**
+- Understand core ideas of OSes
+  - Interrupts/exceptions/preemption
+  - System calls
+  - Scheduling
+  - Parallelism and multi-core
+  - Page-tables & memory virtualization/isolation
+
+---
+
+## Systems & Software
+
+Systems:
+
+- Linux, Windows, Android, `systemd`/`initrc`, containers
+
+Software:
+
+- UNIX & beyond: `xv6`, `plan9`
+- Performance & concurrency: `demikernel`, `go`, `libuv`
+- Microkernels: `nova`, **`composite`**
+- Specialization: `unikraft`, `composite`
+- Separation kernel: `nickel`
+
+---
+
+| Topic | Systems |
+|-------|---------|
+| Reading Code                       | `xv6`                   |
+| System Complexity                  | `plan9`                 |
+| System Structure - layering, hierarchy, components (DAG) | unix, `plan9`, windows  |
+| Interfaces and Properties          |                       |
+| Isolation - namespaces, resources, and binding | `plan9`, `composite`      |
+| Isolation - horizontal vs. vertical, design principles | `nova`, `composite`       |
+| Concurrency                 | `go`, `libuv`, `demikernel` |
+| Parallelism            | `go`, `libuv`, `nova`       |
+| Specialization | `composite`, `unikraft`, firecracker, FreeRTOS |
+| Security | `nickel`, `composite` |
+| Android | android, fuchsia |
+| Resource management | cgroups |
+
+---
+
+```mermaid
+mindmap
+	root((Advanced OS))
+		Reading code
+		Software Complexity
+			Concepts
+				Accidental
+				Essential
+				Semantic gap
+				Optimization
+				Generality
+			Specialization
+				misra C
+				RTOSes
+				CBOS
+			Systems
+				plan9
+				xv6
+				unikraft
+		System Structure
+			Abstraction & Interfaces
+				Properties
+				Design
+			Organization
+				Layers
+				Hierarchy
+				Components
+				DAG
+			Systems
+				xv6
+				plan9
+	    Concurrency & Parallelism
+			Interfaces
+				Properties
+				Examples
+					epoll
+					io_uring
+					poll
+					non-blocking
+					threads
+	        Mechanisms
+	        Systems
+				libuv
+				demikernel
+				go
+	    Isolation
+			Examples
+				Containers
+				VMs
+				Separation kernels
+			Systems
+				Nova
+				Nickel
+			Vertical
+			Horizontal
+			Namespace
+			Resource
+			Security
+				Interfaces
+					Properties
+					Non-interference
+```
+
+---
+
+## Class Organization
+
+1️⃣: Understand concepts $\to$ read existing systems $\to$ understand concepts++
+
+| Day                   | Class             | Course Work               |
+|-----------------------------|------------------------|-------------------------|
+| Thurs                    | *Gabe*: concepts/systems | -             |
+| Thurs $\to$ Tues: | -             | *You*: understand code, do design |
+| Tues                     | *You*: discuss studied system in group, All: discuss together | -              |
+
+2️⃣: Second half of class - project applying concepts into a system.
+
+---
+
+## Class Organization
+
+Tests? Graded homeworks? 👎 💩
+
+Incentive management - peer evaluation:
+
+- Peer evaluation
+- If you aren't prepared for class, your group will suffer.
+- You'll get out of this class what you put into it 🤷
+
+Last week of class: Quick demos
+
+> Self motivation is required to get **anything** from this class
+                    </textarea>
+                </section>
+            </div>
+        </div>
+        <script src="assets/reveal-js/dist/reveal.js"></script>
+        <script src="assets/reveal-js/plugin/markdown/markdown.js"></script>
+        <script src="assets/reveal-js/plugin/highlight/highlight.js"></script>
+        <script src="assets/reveal-js/plugin/zoom/zoom.js"></script>
+        <script src="assets/reveal-js/plugin/notes/notes.js"></script>
+        <script src="assets/reveal-js/plugin/math/math.js"></script>
+
+        
+            
+                
+                    
+                        <script src="https://cdn.jsdelivr.net/npm/reveal.js-mermaid-plugin/plugin/mermaid/mermaid.min.js"></script>
+                    
+                
+            
+        
+
+        <script>
+            Reveal.initialize({
+                
+                    
+                        history: true,
+                    
+                        slideNumber: "c/t",
+                    
+                        transition: "fade",
+                    
+                
+                plugins: [
+                    RevealMarkdown,
+                    RevealHighlight,
+                    RevealZoom,
+                    RevealNotes,
+                    RevealMath,
+
+                    
+                        
+                            
+                                RevealMermaid,
+                            
+                        
+                    
+                ],
+            });
+        </script>
+    </body>
+</html>

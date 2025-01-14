@@ -1,0 +1,289 @@
+/*
+ * Derived from hogent @
+ * https://www.hogent.be/dit-is-hogent/huisstijl/huisstijl-kleuren/
+ * https://fonts.google.com/specimen/Montserrat
+ * https://fonts.google.com/specimen/Inconsolata
+ */
+
+@import url("https://fonts.googleapis.com/css2?family=Inconsolata&family=Montserrat:ital,wght@0,400;0,600;0,800;1,400;1,600;1,800&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Inconsolata&display=swap");
+
+:root {
+    --gap-blue: #4ca2d5;
+    --gap-gray: #c3bbaf;
+    --gap-lightgray: #d3cbbf;
+    --gap-darkblue: #001030;
+    --gap-red: #ef8767;
+    --gap-white: #ffffff;
+    --gap-black: #000000;
+    --gap-font-family: "Montserrat", "Arial", sans-serif;
+
+    /* purple theme */
+    --gap-darkpurple: #352F44;
+    --gap-purple: #5C5470;
+    --gap-lightpurple: #B9B4C7;
+    --gap-purpleaccent: #FAF0E6;
+
+    /* slate theme */
+    --gap-darkslate: #27374D;
+    --gap-slate: #526D82;
+    --gap-lightslate: #9DB2BF;
+    --gap-slatelink: #FFF4CC;
+    --gap-slateaccent: #DDE6ED;
+
+    --gap-background: var(--gap-darkslate);
+    --gap-insetbackground: var(--gap-slate);
+    --gap-codebackground: var(--gap-darkslate);
+    --gap-text-color: var(--gap-lightslate);
+    --gap-accent-color: var(--gap-slateaccent);
+
+    --github-font-family: font-family: -apple-system, BlinkMacSystemFont, Segoe UI, Noto Sans, Helvetica, Arial, sans-serif, Apple Color Emoji, Segoe UI Emoji;
+
+    --header-1-align: center;
+    --header-align: left;
+    --header-color: var(--gap-black);
+
+    --content-align: left;
+    --content-line-height: 1.3;
+    --content-padding-bottom: 0.5em;
+
+    --math-align: left;
+
+    --font-size: 2rem;
+    --inset-font-size: 0.8em;
+
+    --a-color: var(--gap-slatelink);
+    --inline-code-bg-color: var(--gap-insetbackground);
+    --inline-code-border-color: var(--gap-insetbackground);
+    --code-bg-color: var(--gap-codebackground);
+    --code-border-color: var(--code-bg-color);
+
+    --quote-color: var(--gap-text-color);
+    --quote-bg-color: var(--gap-insetbackground);
+}
+
+body {
+/*    background: url("https://gaptin.github.io/cdn/logo/GAP.svg");
+    background-size: 10vh;
+    background-position: right 2ch bottom 3ch;
+    background-repeat: no-repeat; */
+    font-family: var(--gap-font-family);
+    font-weight: 400;
+    font-size: var(--font-size);
+    color: var(--gap-text-color);
+    background-color: var(--gap-background);
+}
+
+section {
+    background-color: var(--gap-background);
+    color: var(--gap-text-color);
+    text-align: var(--content-align);
+}
+
+div.backgrounds {
+    background-color: var(--gap-background);
+}
+
+h3,
+h4,
+h5,
+h6 {
+    text-align: var(--header-align);
+    font-weight: 800;
+    margin-bottom: var(--content-padding-bottom);
+    line-height: 1.25;
+}
+
+h1 {
+    text-align: var(--header-1-align);
+    font-size: 2.5em;
+}
+
+h2 {
+    font-size: 1.6em;
+}
+
+h3 {
+    font-size: 1.3em;
+}
+
+h4 {
+    font-size: 1em;
+}
+
+b,
+strong {
+    color: var(--gap-accent-color);
+    font-weight: bold;
+}
+
+i,
+em {
+    font-style: italic;
+}
+
+a {
+    color: var(--a-color);
+    text-decoration: none;
+}
+
+a:hover {
+    text-decoration: underline;
+}
+
+code {
+    background-color: var(--inline-code-bg-color);
+    font-family: "Inconsolata", monospace;
+    /* font-size: var(--inset-font-size); */
+    padding: 0.2em 0.4em 0.2em 0.4em;
+    border-width: 0ch;
+    border-style: solid;
+    border-color: var(--inline-code-border-color);
+    border-radius: 0.2em;
+}
+
+pre code.mermaid {
+    background-color: var(--gap-insetbackground);
+}
+
+pre code:not(.mermaid) {
+    background-color: var(--code-bg-color);
+    text-align: left;
+    /* font-size: var(--inset-font-size); */
+    white-space: pre-wrap;
+    margin-bottom: var(--content-padding-bottom);
+    border-width: 0.1ch;
+    border-style: solid;
+    border-color: var(--code-border-color);
+    border-radius: 0.2em;
+}
+
+p {
+    line-height: var(--content-line-height);
+    margin-bottom: var(--content-padding-bottom);
+}
+
+blockquote {
+    color: var(--quote-color);
+    background-color: var(--quote-bg-color);
+    font-style: italic;
+    font-size: var(--inset-font-size);
+    line-height: var(--content-line-height);
+    border-left-style: solid;
+    border-left-width: 0.2ch;
+    border-color: var(--quote-color);
+    padding-left: 0.5ch;
+    margin-bottom: var(--content-padding-bottom);
+}
+
+img,
+video,
+iframe {
+    max-width: 100%; /* Must be % because of multicolumn, as those are sub-divs */
+    max-height: 90vh;
+    margin-bottom: var(--content-padding-bottom);
+}
+
+pre code {
+    /* font-size: var(--inset-font-size); */
+    /* Otherwise it overflows below the slide. */
+    /* Why 50vh? I have no clue, it just seems to work ... */
+    max-height: 50vh;
+}
+
+div.MathJax_Display {
+    text-align: var(--math-align) !important;
+    margin-bottom: var(--content-padding-bottom);
+}
+
+table:not(.hljs-ln) {
+    background-color: var(--quote-bg-color);
+    color: var(--quote-color);
+}
+
+table {
+    font-size: var(--inset-font-size);
+    border-collapse: collapse;
+    margin-bottom: var(--content-padding-bottom);
+}
+
+th {
+    font-weight: bold;
+}
+
+td {
+    border-top-style: solid;
+    border-width: 0.1ch;
+    border-color: var(--gap-black);
+}
+
+th,
+td {
+    padding: 0.2em 0.8em 0.2em 0.8em;
+}
+
+li {
+    text-align: left;
+    line-height: var(--content-line-height);
+    margin-left: 3ch;
+}
+
+.reveal section > ul,
+.reveal section > ol {
+    margin-bottom: var(--content-padding-bottom);
+}
+
+.reveal section ol {
+    list-style-type: decimal;
+}
+
+.reveal section ul {
+    list-style-type: disc;
+}
+
+.reveal section ul ul {
+    list-style-type: square;
+}
+
+.reveal section ul ul ul {
+    list-style-type: circle;
+}
+
+.reveal .progress {
+    height: 1vh;
+    background: var(--gap-background);
+}
+
+.reveal .progress span {
+    background: var(--gap-blue);
+}
+
+.reveal .controls {
+    color: var(--gap-blue);
+    right: 6em;
+}
+
+.reveal .slide-number {
+    font-size: 1rem;
+    color: var(--gap-blue);
+    background-color: transparent;
+}
+
+.reveal .slide-number a {
+    text-decoration: none;
+}
+
+div.center > * {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+div.multicolumn {
+    /* https://stackoverflow.com/a/44392145 */
+    display: grid;
+    grid-auto-flow: column;
+    grid-auto-columns: minmax(0, 1fr);
+    gap: 5vw;
+    margin-bottom: var(--content-padding-bottom);
+}

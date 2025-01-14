@@ -183,6 +183,8 @@ My goal is to discuss the material in class so that you understand what's expect
 Your final grade in this category is calcuated as $$\lceil 3.7 + \sum_{w_i} (0.1 \times g_i) \rceil$$ for each week $w_i$ for the associated week's grade $g_i$.
 That is to say, each -1 decreases your grade by 0.1 points, and each 1 increases it by 0.1.
 
+I'll drop your lowest two scores to compensate for sickness and unplanned life complications.
+
 *Transparency.*
 The goal of this grading scale is to make it obvious what your grade is at any point.
 
@@ -194,9 +196,11 @@ Each student will give scores to each other in discussion of system code.
 The final impact of any student's scores on another will be a normalized modifier based on the average score over all ratings (of other students).
 So deviations from the average score are what modify people's grades.
 
+I'll drop your lowest two scores to compensate for sickness and unplanned life complications.
+
 If you fill out a form for someone outside of your group, each time you'll lose 10% of your participation grade.
 
-I'll track participation during the class, and that will increase your grade.
+I'll track participation during the class, and that will *increase* your grade.
 
 *Transparency.*
 I'll give you warnings if your scores are consistently low.
@@ -211,6 +215,9 @@ It is modified downwards if you
 1. don't provide sufficient testing,
 2. don't consider necessary cases, or
 3. don't provide necessary functionality.
+
+The deadlines are long enough into the future that emergencies and sickness should not impact them.
+Contact me early if you anticipate significant issues.
 
 *Transparency.*
 You should know at the end of your demo what your grade is, and why it is what it is.

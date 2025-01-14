@@ -180,7 +180,7 @@ See the spreadsheet for your grade.
 I must *completely subjectively* provide this assignment.
 My goal is to discuss the material in class so that you understand what's expected.
 
-Your final grade in this category is calcuated as $$3.7 + \sum_{week_i} (0.1 * g_i)$$.
+Your final grade in this category is calcuated as $$3.7 + \sum_{week_i} (0.1 \times g_i)$$.
 That is to say, each -1 decreases your grade by 0.1 points, and each 1 increases it by 0.1.
 
 *Transparency.*

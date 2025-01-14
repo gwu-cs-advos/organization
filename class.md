@@ -29,6 +29,11 @@ If you aren't comfortable with under-specified assignments, and with needing to 
 If you aren't willing to dive into various code-bases to try and understand the underlying design, this class might not be for you.
 I don't expect that anyone will have the experience to do this effectively coming into the class, and the class is designed around giving you practice in this.
 
+## Lectures
+
+Most lecture information will be in [slides](https://gwu-cs-advos.github.io/organization/).
+These are generated from markdown [in the book's repo](https://github.com/gwu-cs-advos/docs/tree/main/slides).
+
 ## Calendar
 
 Please fill out the required form for deadlines by noon on the day of the deadline -- i.e. around 2.33 hours *before* the class.

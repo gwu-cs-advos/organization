@@ -79,6 +79,7 @@
   - Scheduling
   - Parallelism and multi-core
   - Page-tables & memory virtualization/isolation
+  - Some UNIX familiarity
 
 ---
 
@@ -90,11 +91,11 @@ Systems:
 
 Software:
 
-- UNIX & beyond: `xv6`, `plan9`
+- UNIX & beyond: `xv6`, `busybox`, `plan9`
 - Performance & concurrency: `demikernel`, `go`, `libuv`
 - Microkernels: `nova`, **`composite`**
 - Specialization: `unikraft`, `composite`
-- Separation kernel: `nickel`
+- Separation kernel: `nickel`, `komodo`
 
 ---
 
@@ -108,7 +109,7 @@ Software:
 | Isolation - horizontal vs. vertical, design principles | `nova`, `composite`       |
 | Concurrency                 | `go`, `libuv`, `demikernel` |
 | Parallelism            | `go`, `libuv`, `nova`       |
-| Specialization | `composite`, `unikraft`, firecracker, FreeRTOS |
+| Specialization | `composite`, `unikraft` |
 | Security | `nickel`, `composite` |
 | Android | android, fuchsia |
 | Resource management | cgroups |
@@ -190,7 +191,7 @@ mindmap
 | Thurs $\to$ Tues: | -             | *You*: understand code, do design |
 | Tues                     | *You*: discuss studied system in group, All: discuss together | -              |
 
-2️⃣: Second half of class - project applying concepts into a system.
+2️⃣: Implement systems in 1. a UNIX service, and 2. an existing system.
 
 ---
 
@@ -198,11 +199,12 @@ mindmap
 
 Tests? Graded homeworks? 👎 💩
 
-Incentive management - peer evaluation:
+Incentive management:
 
-- Peer evaluation
-- If you aren't prepared for class, your group will suffer.
-- You'll get out of this class what you put into it 🤷
+- Peer evaluation - if you aren't prepared for class, your group will suffer.
+- Participation
+
+You'll get out of this class what you put into it 🤷
 
 Last week of class: Quick demos
 

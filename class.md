@@ -166,7 +166,7 @@ The grading structure leans into this.
 | Class Participation      | 30%             |
 | Homeworks + Project      | 40%             |
 
-## Code & Lecture Questions
+## System Design Reviews
 
 You'll be reading a lot of code, and watching lectures throughout the class.
 Each student starts the class with a code and lecture questions grade of between A-: 3.7.

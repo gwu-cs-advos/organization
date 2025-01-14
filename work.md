@@ -1,4 +1,37 @@
-# Lectures and Questions
+# Systems
+
+We'll discuss and investigate a number of systems in this class.
+These include:
+
+- [Composite](https://github.com/gwsystems/composite/tree/v4) - our microkernel based on fine-grained isolation, user-level configurable policies, and component-based design.
+- [libuv](https://github.com/gwu-cs-advos/libuv) - the core concurrency library underlying Node.js.
+- [go](https://github.com/gwu-cs-advos/go) - a popular programming language that excels at managing complexity.
+- [demikernel](https://github.com/gwu-cs-advos/demikernel) - a library-OS focused on extremely fast dataplanes in deep cloud infrastructure.
+- [xv6](https://github.com/gwu-cs-advos/xv6-riscv) - a simple UNIX clone focused on pedagogy.
+- [plan9](https://github.com/gwu-cs-advos/plan9) - a "UNIX done right" OS with a strong focus on "everthing is a file" and other composable abstractions.
+- [busybox](https://github.com/gwu-cs-advos/busybox) - a POSIX user-level runtime that is in almost every embedded system including the bootup programs (e.g. `init`), and a set of common programs (e.g. `ls`).
+- [unikraft](https://github.com/gwu-cs-advos/unikraft) - a library OS focused on providing a simple execution environment for a single application.
+- [komodo](https://github.com/gwu-cs-advos/Komodo) - a minimal OS to create an enclave execution environment for an application.
+- [nickel](https://github.com/gwu-cs-advos/nickel) - a security-focused OS that provides non-interference.
+- [nova](https://github.com/gwu-cs-advos/NOVA) - a beautifully written microkernel focused on virtualization.
+
+# Schedule
+
+## 2: xv6
+## 3: busybox
+## 4: plan9
+## 5: go
+## 6: libuv
+## 7: demikernel
+## 8: composite kernel
+## 9: composite crt
+## 10: composite slm
+## 11: unikraft
+## 12: nova
+## 13: komodo
+## 14: nickel
+
+# Previous Content (Ignore)
 
 The sections of the this document are either:
 

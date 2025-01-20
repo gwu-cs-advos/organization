@@ -103,6 +103,10 @@ As such, it is a simple code-base to use to dive into the core of UNIX design.
 - What file descriptor number is returned when a pipe or file is created?
 - How many system calls does the OS have?
 
+High level questions for discussion class:
+- What choices and coding techniques enable `xv6` to be so simple?
+- What choices enable it to avoid the complexity of other systems that have five orders of magnitude more code?
+
 ## 3: busybox
 
 Busybox is a great example of relatively simple software that is pervasively deployed (in embedded systems) as a POSIX environment for a user-level bootup and shell execution.
@@ -111,7 +115,13 @@ When the busybox binary runs, it will look at `argv[0]`, and run the correspondi
 As such, the code is a little strange to go through as there is effectively a *single* program where you'd expect there to be multiple.
 
 - Where is the `init` computation in Busybox, and what does it do to boot up a system?
+- What does `inetd` do, and where its its core event loop?
 - Why is busybox designed to be a single binary and emulate running separate binaries?
+
+High level questions for discussion in class:
+- What is the core difference between `inetd`, `cron`, and `initrc` in terms of their software structure?
+- `systemd` is a super daemon (or collection of daemons) that actively manages a running system -- from bootup, to coordination, closer to `initd` than to `initrc`.
+  Most modern systems use `systemd` or something like it (`launchd` in OSX) instead of a simple `init`...why?
 
 ## 4: plan9
 
@@ -146,6 +156,10 @@ Questions:
 3. Exportfs can handle many concurrent client requests at the same time, even though the local namespace has blocking read and write.
 	First, identify where the actual read operation (in response to a `TREAD` 9p request) is conducted, and then answer how `exportfs` is written to enable multiple client requests to be handled concurrently even if one of them blocks.
 
+For discussion in class:
+- How are namespaces and system organization used in plan9 to promote composability?
+- What are the trade-offs in enabling apps to interact with each other through their own exported FS interface?
+
 ## 5: go
 
 The `go` language (created by the people who designed Plan 9!) is a simple language with garbage collection that has a model of concurrency based on easily creating new threads ("goroutines"), and coordinating between them with channels. Instead of UNIX programs that coordinate using file-descriptors, "channels" are a first-class abstraction in go.
@@ -175,6 +189,10 @@ Questions:
 - Try and assess the fastpath for channel send/receive.
   What is the common case control flow for channels?
 
+For discussion in class:
+- What abstractions for concurrency does `go` provide to programs?
+- What semantic gaps between go programs and the OS interface exist?
+
 ## 6: libuv
 
 Javascript is a language that handles concurrently entirely through event-based means.
@@ -196,6 +214,10 @@ Questions for `libuv`:
 
 It might help to start out by perusing the [tests](https://github.com/libuv/libuv/tree/v1.x/test) will give you a lot of context to dive in.
 
+For discussion in class:
+- What OS abstractions is this library trying to hide?
+- Please describe the core abstractions provided by this library?
+
 ## 7: demikernel
 
 The demikernel is a low-level library to provide abstractions to programs that want to *directly interact* with I/O.
@@ -215,6 +237,10 @@ Questions:
 	I define blocking as "being removed from the scheduler runqueue to allow other threads to execute".
 	Provide evidence of this in the code.
 	Why do you think this is?
+
+For discussion in class:
+- In what ways are demikernel's design very specialized to its goals?
+- What problem domains do you think are a good fit for the demikernel?
 
 ## 8: composite kernel
 ## 9: composite crt
@@ -242,6 +268,7 @@ Your service must do all of the following:
 
 [The Linux Programming Interface](https://man7.org/tlpi/code/index.html) is a great resource for code for domain sockets and related technologies.
 For example, see the [client](https://man7.org/tlpi/code/online/dist/sockets/ud_ucase_cl.c.html) and [server](https://man7.org/tlpi/code/online/dist/sockets/ud_ucase_sv.c.html) code for 1. getting authenticated client id, and 2. [passing](https://man7.org/tlpi/code/online/dist/sockets/scm_multi_send.c.html) [file-descriptors](https://man7.org/tlpi/code/online/dist/sockets/scm_multi_recv.c.html) from the service to the client.
+You should implement your service in C/C++/or Rust as I'd like you to not use a language that drastically hides the APIs.
 
 This set of requirements enables the service to have higher permissions than its clients (e.g. to run as `root`), thus have access to many resources, yet to provide a service in which a subset of those resources are given to clients based on their requests and their user ids.
 

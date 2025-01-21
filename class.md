@@ -107,79 +107,6 @@ High level questions for discussion class:
 - What choices and coding techniques enable `xv6` to be so simple?
 - What choices enable it to avoid the complexity of other systems that have five orders of magnitude more code?
 
-### Questions
-
-> What is the file-descriptor type in `file.h` (e.g. `FD_PIPE`), and don't FD 0, 1, 2 have to do with stdin/out/err?
-
-These are part of the file descriptor structure, and are used to record the type of the file descriptor, not the fd number.
-In Linux, instead of a type like this, and a switch statement to take the correct action for a `read`/`write`/etc, the `struct file` has a set of function pointers that are overwritten by pipe, file, dev, etc...-specific functions depending on the type of the file.
-
-> Is this a minimal number of system calls? Why don't all OSes have a minimal number?
-
-"Minimal" is *real hard* to define, and is specific to a set of required applications.
-What if your system has to support almost *every single application*?
-
-> What is this doing?
-
-```c
-        (*f0)->type     = FD_PIPE;
-        (*f0)->readable = 1;
-        (*f0)->writable = 0;
-        (*f0)->pipe     = pi;
-        (*f1)->type     = FD_PIPE;
-        (*f1)->readable = 0;
-        (*f1)->writable = 1;
-        (*f1)->pipe     = pi;
-```
-
-Each file has a readable and writable field that define the allowed operations on that file descriptor.
-When `read` or `write` are used on an fd, the kernel checks these values to see if the operation is allowed, or should error out.
-Because we're setting the type of `FD_PIPE`, `->pipe` is set to the struct pipe.
-
-> How hard is it to add threads to xv6?
-
-Ask the undergrads: that's homework 3 in CSCI 3411.
-
-> Why not networking?
-
-We didn't have it in the 1978 world of UNIX!
-We could absolutely add it, but it would take a lot of work.
-
-> Why aren't `fork` and `exec` bundled together!?
-
-This is not how UNIX works.
-`fork` creates new processes, and `exec` loads a new program into an existing process.
-`posix_spawn` and the `CreateProcess` comparable function in Windows couple both into a single call.
-We'll talk a lot about this later in the class.
-
-> What's with the UART support?
-
-The serial device/bus is pretty pervasive in a lot of systems, and is often used to connect to a terminal for input and output.
-In xv6, all output goes to the serial device, and all input (from the keyboard) comes from it.
-
-> Why does the xv6 shell restart after execution, and doesn't that impact performance?
-
-The developers likely determined that it was the simplest way accomplish the goals of the shell.
-It is likely slower to recreate the process rather than just "loop", but has the benefit that it can avoid bugs carrying over across shell invocations (e.g. memory leaks).
-Restarting processes has been called "poor man's garbage collection" for this reason.
-
-> Why no `creat` in `xv6`?
-
-`open` with the `O_CREATE` flag can create a file, so the developers didn't implement a separate `creat` call.
-What are the trade-offs with this?
-
-> Doesn't this do most of what we need? Why are systems more complex?
-
-This gives us "bare minimum" UNIX.
-But with only these minimal abstractions we cannot have nice interactive behavior, GUIs, networking, efficient multi-threading, power management, etc...
-When you need to support all of databases *and* web browsers *and* video games *and* webservers *and* embedded computations *and* legacy support, the complexity proliferates.
-
-> It is surprising that `dup` returns the lowest available fd #. What is `dup` used for?
-
-
-
-> Why spinlocks over mutexes? Why mutexes over spinlocks?
-
 ## 3: busybox
 
 Busybox is a great example of relatively simple software that is pervasively deployed (in embedded systems) as a POSIX environment for a user-level bootup and shell execution.
@@ -188,7 +115,7 @@ When the busybox binary runs, it will look at `argv[0]`, and run the correspondi
 As such, the code is a little strange to go through as there is effectively a *single* program where you'd expect there to be multiple.
 
 - Where is the `init` computation in Busybox, and what does it do to boot up a system?
-- What does `inetd` do, and where its its core event loop?
+- What does `inetd` do, and where is its core event loop?
 - Why is busybox designed to be a single binary and emulate running separate binaries?
 
 High level questions for discussion in class:

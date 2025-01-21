@@ -49,6 +49,24 @@
 
 ---
 
+How is it so simple, how does it avoid complexity?
+
+> Is this a minimal number of system calls? Why don't all OSes have a minimal number?
+
+> Why is there no `creat` call?
+
+> This does most of what we need! Why are systems more complex?
+
+> Surprising that `dup` returns the lowest available fd #. What is `dup` used for?
+
+> Why spinlocks over mutexes? Why mutexes over spinlocks?
+
+> Why is the stack at addresses lower than the heap?
+
+> Why does `kmalloc` use `5` instead of `0` in initializing its new page?
+
+---
+
 ```c [3|12-19|99-100|124-125|37|60-70|84-96]
 struct cpu cpus[NCPU];
 
@@ -236,26 +254,6 @@ Notes:
 ```
 
 </div></div>
-
----
-
-## Questions
-
-> Is this a minimal number of system calls? Why don't all OSes have a minimal number?
-
-> Why is there no `creat` call?
-
-> This does most of what we need! Why are systems more complex?
-
-> Surprising that `dup` returns the lowest available fd #. What is `dup` used for?
-
-> Why spinlocks over mutexes? Why mutexes over spinlocks?
-
-> Why is the stack at addresses lower than the heap?
-
-> Why does `kmalloc` use `5` instead of `0` in initializing its new page?
-
-> Does `fork` require "deep copying" all allocated resources for the forking process?
 
 ---
 

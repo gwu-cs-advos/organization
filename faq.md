@@ -153,7 +153,7 @@ Why use one design over the other?
 - A separate page-table for the kernel has the downside that when the kernel receives a virtual address as a system call argument, it must translate that virtual address into memory that the kernel can dereference (i.e. it must translate from user-virtual into physical), which practically means it must walk the user's page-table -- see `copyin` and `copyout` in `vm.c`.
   This is relatively complex and expensive.
 - If the kernel shares the same page-table as the application, the benefit is that it can directly access addresses provided for system calls (doing this is *very hard* as user level might provide *incorrect* pointers such as `NULL`), which is fast.
-- If the kenrel shares the same page-table as the application, the kernel will be loaded into virtual addresses that aren't identical (an "identity mapping") to physical memory, so any calculation of physical addresses (for page-tables, the page-table base register, or DMA) must manually convert to physical addresses usually using simple subtraction (i.e. `phys_addr = virt_addr - KERNEL_BASE_VIRT_ADDR`).
+- If the kernel shares the same page-table as the application, the kernel will be loaded into virtual addresses that aren't identical (an "identity mapping") to physical memory, so any calculation of physical addresses (for page-tables, the page-table base register, or DMA) must manually convert to physical addresses usually using simple subtraction (i.e. `phys_addr = virt_addr - KERNEL_BASE_VIRT_ADDR`).
 
 On balance, the cost of copying user syscall arguments is too high, so most systems will use a shared page-table.
 

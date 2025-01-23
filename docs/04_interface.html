@@ -268,12 +268,14 @@ Notes:
 
 ## Considerations for Composability
 
+Thread safety example:
+- `getenv`/`strtok` are not thread safe
+
 Reentrancy problem examples:
 - What if we call `malloc` in a signal handler?
 - Call buffered I/O (e.g. `printf`)?
 
 If your interface is not thread safe and reentrant, you are *not* composable with threads nor signals.
-- I'd argue to *not use signals* and "give up" on that game (there are alternatives).
 
 Notes:
 `malloc` requires locks, so if we get a signal handler while holding one of these locks, then call `malloc`, we'll take the lock a second time and, more importantly, try and access data-structures currently in a critical section.

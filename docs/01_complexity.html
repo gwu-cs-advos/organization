@@ -428,18 +428,51 @@ Why not just **not** create technical debt?
 
 ---
 
+# Abstraction Accidental Complexity
+
+---
+
 ## Accidental Complexity
 
 Mismatch between abstraction-level and specifications:
 
-| Abstraction     | Task        | Misalignment       |
-|-----------------------|--------------------------|---------------------------|
-| FS file/directory API | SQL per-record semantics | Abstractions mismatched   |
-| Best-effort scheduler | Real-time system         | Abstractions not provided |
-| Simple RTOS           | Webserver                | Abstractions inadequate   |
+| Abstraction           | Task                     | Misalignment                |
+|-----------------------|--------------------------|-----------------------------|
+| FS file/directory API | SQL per-record semantics | Abstractions **mismatched** |
+| Best-effort scheduler | Real-time system         | Abstractions **absent**     |
+| Simple RTOS           | Webserver                | Abstractions **inadequate** |
 
-**Semantic gap** - distance between what is provided by the system, and what is required to accomplish a task.
-- contortions within your code to approximate correct behavior $\to$ *accidental complexity*
+---
+
+## Semantic Gap
+
+Distance between
+- what is provided by the system, and
+- what is required to accomplish a task.
+
+Leads to contortions within your code to *approximate* correct behavior $\to$ *accidental complexity*
+
+---
+
+## Accidental Complexity
+
+Annoying details applications have to consider
+
+| Abstraction  | Task        | Annoying details                |
+|--------------|-------------|---------------------------------|
+| `fsync`      | Database    | FS doesn't hide disk sync       |
+| `mfence`     | data-struct | data-structs help the cache     |
+| `setsockopt` | net comms   | Intricate communication details |
+
+---
+
+## Leaky Abstractions
+
+An abstraction that
+- *reveals implementation details* to the client or
+- requires client to *have knowledge of implementation details*.
+
+Your code must consider details normally hid by an abstraction $\to$ move complexity to each client
 
 ---
 
@@ -451,7 +484,7 @@ Systems with many 10s of M of SLoC seem to work. *What gives?*
 
 ## SLoC $\neq$ Complexity
 
-The cognitive code is correlated with, but not a direct function of SLoC.
+Cognitive load is correlated with, but not a direct function of SLoC.
 
 *Foreshadowing*: code structure matters.
 
@@ -515,31 +548,7 @@ Constrain $N^2$ complexity of module interconnections.
 - *Layering* - Layer $i$ interacts only with $i$ and $i+1$ layers
 - *Hierarchy* - Modules arranged WRT dependency relationships - interfaces separate modules
 
-Interfaces = core of system design
-
----
-
-## Interface Design
-
-- Wide vs. Narrow
-- Composition
-- Separation of Concerns/Orthogonality
-- Separation of mechanism and policy
-- Liveness/Ownership
-- Thread safety/reentrancy
-- Algebraic properties: idempotency, commutativity, associativity, monotonicity, lattices
-- Simplicity/Principle of least astonishment
-- Principle of Least Privilege
-- Non-interference
-
----
-
-## System Interface and Component Design
-
-1. resources
-   - Interface-defined interactions between resources
-2. namespace management
-3. bindings
+**Interfaces = core of system design**
                     </textarea>
                 </section>
             </div>

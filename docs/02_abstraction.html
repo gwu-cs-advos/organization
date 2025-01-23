@@ -105,9 +105,31 @@ sched_setparam(getpid(), &sp);
 
 ---
 
+# What Makes a Good Abstraction?
+
+---
+
 ## Shallow vs. Deep Components
 
-How **wide** is the interface relative to the implementation?
+1️⃣ How **wide** is the interface?
+
+2️⃣ How much detail does the component **hide**?
+
+---
+
+## Shallow vs. Deep Components
+
+**Deep component** = higher value of:
+
+$$\frac{\textsf{hidden implementation details}}{\textsf{interface width}}$$
+
+Measure of *information hiding* $\to$ removing complexity from clients.
+
+---
+
+## Shallow vs. Deep Components
+
+How **wide** is the interface *relative to* the hidden details?
 
 - Narrow interface w/ significant implementation
   - Hides significant complexity
@@ -261,12 +283,22 @@ Many DB systems have been tempted to use `mmap` for fast access to DB files.
 
 ---
 
+## Semantic Gap Example: Networking
+
+I want to talk to the Internet.
+
+VFS doesn't have that thing.
+
+- `open("/net/https://lobste.rs", ...)`?
+
+---
+
 ## Deep Component - Networking Example
 
 `socket`s augment the VFS API to enable network communication
 
 - Streaming enables TCP/IP, without needing to know the details
-- But one can also use UDP if they require more per-packet control
+- Can also use UDP if they require more per-packet control
 
 ---
 
@@ -274,11 +306,13 @@ Many DB systems have been tempted to use `mmap` for fast access to DB files.
 
 Expose *internal implementation details* in the interface
 
-- Example: an interface close to that of a data-structure - linked list API, `block_*` interface w/ simple implementation
+- Examples:
+  - an interface close to that of a data-structure - linked list API
+  - `block_*` interface w/ simple implementation
 - *Couples component and client logic*
-  - Defeats point of abstraction!
   - Complicates component updates
   - Moves complexity to client
+  - Defeats point of abstraction!
 
 Leaky abstractions - an abstraction that reveals or requires client to have knowledge of implementation details.  <!-- .element: class="fragment" data-fragment-index="1" -->
 
@@ -298,18 +332,21 @@ Complexity is passed to the client
 
 ---
 
-## Extending Interfaces w/ Leaks
+## Default Design Goal
 
-Default design goal:
-
-1. Deep component, narrow interface
+1. Deep component (narrow interface, hide details)
 2. Optimized interface for *common case* usage
    - For example, avoid whatever led to Java's `FileInputStream`, `BufferedInputStream`, I/O mess
-3. Semantic gap? $\to$ [extend interface](https://ieeexplore.ieee.org/document/183036) for more control where necessary
 
 ---
 
-## Deep Component with Shallow Extension
+## Extending Interfaces w/ Leaks
+
+Deep component has a semantic gap?<br> $\to$ [extend interface](https://ieeexplore.ieee.org/document/183036) for more control where necessary<br> $\to$ often creates a leaky abstraction
+
+---
+
+## Deep Component with a Leaky Extension
 
 ```c []
 int ioctl(int fd, unsigned long op, ...);
@@ -322,7 +359,7 @@ int ioctl(int fd, unsigned long op, ...);
 
 ---
 
-## File Access Shallow Extension
+## File Access Leaky Extension
 
 ```c []
 void *mmap(void *addr, size_t length, int prot, int flags, int fd, off_t offset);
@@ -336,7 +373,7 @@ void *mmap(void *addr, size_t length, int prot, int flags, int fd, off_t offset)
 
 ---
 
-## Interface Extension Examples
+## Leaky Interface Extension Examples
 
 Bridge the semantic gap, acknowledging leaky abstraction:
 

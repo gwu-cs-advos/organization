@@ -143,8 +143,8 @@ First, the library for helping services interact with the 9p protocol:
 
 Then, two of the main consumers of the API:
 
-- [exportfs](https://github.com/gwu-cs-advos/plan9/blob/master/sys/src/cmd/exportfs/) (remember, this takes a local namespace and exposes them over a 9p channel, served over the network), and
-- [import](https://github.com/gwu-cs-advos/plan9/blob/master/sys/src/cmd/import.c) (remember, this contacts a 9p channel over the network, and exposes its namespace in the local namespace via mount).
+- [exportfs](https://github.com/gwu-cs-advos/plan9/blob/master/sys/src/cmd/exportfs/) (this takes a local namespace and exposes them over a 9p channel, served over the network), and
+- [import](https://github.com/gwu-cs-advos/plan9/blob/master/sys/src/cmd/import.c) (this contacts a 9p channel over the network, and exposes its namespace in the local namespace via mount).
 
 Questions:
 

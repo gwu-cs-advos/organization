@@ -159,3 +159,80 @@ On balance, the cost of copying user syscall arguments is too high, so most syst
 
 ...but as with all things in this class, that is not always true.
 The meltdown bug, mean that kernels needed to use separate page-tables when security was a core concern, thus Linux uses [page-table isolation](https://en.wikipedia.org/wiki/Kernel_page-table_isolation).
+
+## `busybox`
+
+> How is busybox optimized for embedded systems?
+
+All of busybox and its applets are compiled together into a single binary.
+This enables the compiler and linker to get rid of objects and functions it doesn't require.
+It also enables code and data to appear once in the busybox binary, rather than being replicated across different binaries.
+Note, that many busybox systems focus on *static linking* of binaries, thus why this technique is useful.
+
+> What is the `INIT_G` in most programs?
+
+A macro to initialize the globals for the program.
+
+> Why have a `global` struct, and `INIT_G` macro for its initialization in many of the programs?
+
+This might be an attempt to avoid symbol namespace pollution.
+The ELF objects/binaries will only have a single symbol for the global variable, rather than a separate symbol for each global variable.
+If any of those variables are *not* `static`, this is important as it prevents two symbols in different "programs" (.o files) from having a symbol conflict that would prevent linking.
+This is a somewhat typical C practice, but it is very important in busybox where many logically separate programs are linked together.
+
+It could also simply just be a convention that they use.
+
+> What are all of the "//config" statements in the code?
+
+The kconfig system is a way to configure the features you want present in a source code base.
+It is often manually configured using `make menuconfig` (i.e. this is a key part of building the Linux kernel.
+The `Makefile` [parses out](https://github.com/brgl/busybox/blob/master/Makefile#L362-L365) all of those statements, and generates config files from them.
+These are read in when one executes `make menuconfig` to present to you the options to include or not those configuration options.
+Your choice determines essentially if a `#define OPTION` is created in a shared include file (I believe in `applets.h`).
+As such, if you decide to enable `OPTION`, it will generate the header that includes that option, thus triggers the compilation of all code within `#ifdef OPTION...#endif` guards.
+
+In short: only generate code that you actually want!
+Note that plan9 has a different perspective/mechanism for doing this.
+
+> Why couple the daemons with the rest of the code?
+
+They absolutely *do* share some library code and data with other applets (programs).
+So including them is meant to avoid replicating that in memory across binaries.
+Daemons are also the code that is least likely to have a performance impact from the busybox organization.
+They startup once (and go through the whole applet selection code), and execute for the duration of the system.
+Thus, they pay the startup cost once, as opposed to command line programs (e.g. `ls`) that must pay that cost on each execution.
+
+> `inetd` uses `vfork` then `exec`; doesn't this overwrite the memory of the parent?
+
+`vfork` avoids copying all memory from the parent, thus its *only valid use* is to shortly thereafter call `exec`.
+The child is treated as a separate process that simply shares the same address space (kinda like a thread, but one that shares the *stack* of the parent).
+Thus when it calls `exec`, it will only overwrite the child process, which effectively means the parent is the only process still accessing the original memory.
+
+> How does `init` support SysV runlevels?
+
+It [does not](https://github.com/gwu-cs-advos/busybox/blob/master/init/init.c#L1244-L1246)!
+It supports a simple inittab.
+It is perhaps less appropriate for larger, complex systems that could use the modularity of rc scripts.
+
+> Why so many macros?
+
+To enable configurability of which features are included in the resulting binary.
+Remember that a small footprint is a core goal of busybox!
+
+> When `init` runs, are the filesystems and console assumed to be already set up?
+
+No!
+`init` runs a ram-based file system as it is loaded into memory by the bootloader along with the kernel.
+Thus, the FS that is accessible upon `init` execution is quite limited to the ram image.
+`init`'s job is the `mount` the appropriate file system to ensure that the rest of the actual FS is available.
+But...where is this happening?
+EC for finding out!
+
+Where is the console?
+`init` uses the console in `/dev/tty`, I believe.
+
+> Where is `setsid` defined?
+
+Note that `busybox` is *not* standalone!
+It still requires a libc to execution successfully.
+Often it is used with `musl` libc as it shares the goal of simplicity and minimal footprint.

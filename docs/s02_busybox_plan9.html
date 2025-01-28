@@ -42,6 +42,50 @@
 
 ---
 
+## Busybox is simple
+
+...but not as simple as `xv6`.
+
+What drives this complexity?
+
+---
+
+## F35 Design
+
+Fighter jet: 3 variants
+
+1. conventional
+2. vertical take-off
+3. longer-range, reinforced wheels, folding wings
+
+Idea: Lets use *one design* for all! 🤯 $\to$ 🧠 💪
+
+---
+
+<img src="resources/f35_blueprint.jpg">
+
+Notes:
+Three designs, including the vertical take-off variant that has a *fan*.
+So now all versions had to have a design that could accommodate a fan, even if they didn't need it!
+
+---
+
+<img src="resources/f35_canopy.jpg">
+
+Notes:
+This means that the canopy must open this way.
+Why? No other fighter jets do this, and for good reason.
+You want the canopy to open in the direction such that wind resistance with ejecting will rip the canopy away.
+Opening this direction is the *opposite*!
+You're working against wind residence.
+You can see in the picture lines of *explosives* that rip the canopy away via force.
+
+Complexity upon complexity, upon complexity, due to features/design.
+
+Busybox is partially complex simply because the specifications it must adhere to are complex.
+
+---
+
 ## Busybox program execution
 
 All programs are a *single executable*

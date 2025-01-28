@@ -236,3 +236,14 @@ Where is the console?
 Note that `busybox` is *not* standalone!
 It still requires a libc to execution successfully.
 Often it is used with `musl` libc as it shares the goal of simplicity and minimal footprint.
+
+> Why does `inetd` use `vfork` instead of `fork`?
+
+While `vfork` is more efficient, the reason is likely that busybox wants to be able to execute on systems that *don't have an MMU!!!*
+That means that there is no address virtualization.
+`fork` simply cannot exist in such a system.
+
+> How does `busybox` work since it is all one binary: where is the kernel?
+
+`busybox` depends only on having a libc, but also a working kernel!
+`busybox` is only a user-level program.

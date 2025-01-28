@@ -1,0 +1,547 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+
+        
+
+        <link rel="stylesheet" href="assets/reveal-js/dist/reveal.css" />
+
+        
+            <link rel="stylesheet" href="assets/theme.css" />
+        
+        
+            <link rel="stylesheet" href="assets/nord.css" />
+        
+
+        
+            
+        
+    </head>
+    <body>
+        <div class="reveal">
+            <div class="slides">
+                <section data-markdown
+                
+                    data-separator-vertical="^\s*-v-\s*$"
+                
+                    data-separator-notes="^Notes?:"
+                
+                >
+                    <textarea data-template>
+                        # Busybox & Plan 9
+
+<div class="center">
+
+**Gabe Parmer**
+
+© Gabe Parmer, 2025, All rights reserved
+
+</div>
+
+---
+
+## Busybox program execution
+
+All programs are a *single executable*
+
+- [`main`](https://github.com/gwu-cs-advos/busybox/blob/master/libbb/appletlib.c#L1032) calls [`run_applet_and_exit`](https://github.com/gwu-cs-advos/busybox/blob/master/libbb/appletlib.c#L977)
+- Looks at `argv[0]`
+- Dispatch to the corresponding `*_main` based on that
+
+---
+
+Configuration in `/etc/inetd.conf`
+
+```
+# service type proto wait/nowait user prog args
+ftp stream tcp nowait root /usr/sbin/ftpd ftpd
+telnet stream tcp nowait root /usr/sbin/telnetd telnetd -a
+time stream tcp nowait root internal time
+```
+
+Protocols looked up in `/etc/protocols`
+
+-v-
+
+Some `inetd.conf` [documentation](https://www.gnu.org/software/libc/manual/html_node/Configuring-Inetd.html).
+
+---
+
+## `inetd`
+
+0. [Parse](https://github.com/gwu-cs-advos/busybox/blob/master/networking/inetd.c#L723) the configuration
+1. Create network server in response to client connections
+2. [`wait` for the servers](https://github.com/gwu-cs-advos/busybox/blob/master/networking/inetd.c#L1140) it creates (nonblocking, and when [notified](https://github.com/gwu-cs-advos/busybox/blob/master/networking/inetd.c#L1280))
+3. Handle network traffic in an [event loop](https://github.com/gwu-cs-advos/busybox/blob/master/networking/inetd.c#L1292-L1536) (using `select` and socket sets)
+
+---
+
+```c [13|23-25|34|114|236]
+	for (;;) {
+		int ready_fd_cnt;
+		int ctrl, accepted_fd, new_udp_fd;
+		fd_set readable;
+
+		if (maxsock < 0)
+			recalculate_maxsock();
+
+		readable = allsock; /* struct copy */
+		/* if there are no fds to wait on, we will block
+		 * until signal wakes us up (maxsock == 0, but readable
+		 * never contains fds 0 and 1...) */
+		ready_fd_cnt = select(maxsock + 1, &readable, NULL, NULL, NULL);
+		if (ready_fd_cnt < 0) {
+			if (errno != EINTR) {
+				bb_simple_perror_msg("select");
+				sleep1();
+			}
+			continue;
+		}
+		dbg("ready_fd_cnt:%d\n", ready_fd_cnt);
+
+		for (sep = serv_list; ready_fd_cnt && sep; sep = sep->se_next) {
+			if (sep->se_fd == -1 || !FD_ISSET(sep->se_fd, &readable))
+				continue;
+
+			dbg("ready fd:%d\n", sep->se_fd);
+			ready_fd_cnt--;
+			ctrl = sep->se_fd;
+			accepted_fd = -1;
+			new_udp_fd = -1;
+			if (!sep->se_wait) {
+				if (sep->se_socktype == SOCK_STREAM) {
+					ctrl = accepted_fd = accept(sep->se_fd, NULL, NULL);
+					dbg("accepted_fd:%d\n", accepted_fd);
+					if (ctrl < 0) {
+						if (errno != EINTR)
+							bb_perror_msg("accept (for %s)", sep->se_service);
+						continue;
+					}
+				}
+				/* "nowait" udp */
+				if (sep->se_socktype == SOCK_DGRAM
+				 && sep->se_family != AF_UNIX
+				) {
+/* How udp "nowait" works:
+ * child peeks at (received and buffered by kernel) UDP packet,
+ * performs connect() on the socket so that it is linked only
+ * to this peer. But this also affects parent, because descriptors
+ * are shared after fork() a-la dup(). When parent performs
+ * select(), it will see this descriptor connected to the peer (!)
+ * and still readable, will act on it and mess things up
+ * (can create many copies of same child, etc).
+ * Parent must create and use new socket instead. */
+					new_udp_fd = socket(sep->se_family, SOCK_DGRAM, 0);
+					dbg("new_udp_fd:%d\n", new_udp_fd);
+					if (new_udp_fd < 0) { /* error: eat packet, forget about it */
+ udp_err:
+						recv(sep->se_fd, line, LINE_SIZE, MSG_DONTWAIT);
+						continue;
+					}
+					setsockopt_reuseaddr(new_udp_fd);
+					/* TODO: better do bind after fork in parent,
+					 * so that we don't have two wildcard bound sockets
+					 * even for a brief moment? */
+					if (bind(new_udp_fd, &sep->se_lsa->u.sa, sep->se_lsa->len) < 0) {
+						dbg("bind(new_udp_fd) failed\n");
+						close(new_udp_fd);
+						goto udp_err;
+					}
+					dbg("bind(new_udp_fd) succeeded\n");
+				}
+			}
+
+			block_CHLD_HUP_ALRM(&omask);
+			pid = 0;
+#ifdef INETD_BUILTINS_ENABLED
+			/* do we need to fork? */
+			if (sep->se_builtin == NULL
+			 || (sep->se_socktype == SOCK_STREAM
+			     && sep->se_builtin->bi_fork))
+#endif
+			{
+				if (sep->se_max != 0) {
+					if (++sep->se_count == 1)
+						sep->se_time = monotonic_sec();
+					else if (sep->se_count >= sep->se_max) {
+						unsigned now = monotonic_sec();
+						/* did we accumulate se_max connects too quickly? */
+						if (now - sep->se_time <= CNT_INTERVAL) {
+							bb_error_msg("%s/%s: too many connections, pausing",
+									sep->se_service, sep->se_proto);
+							remove_fd_from_set(sep->se_fd);
+							close(sep->se_fd);
+							sep->se_fd = -1;
+							sep->se_count = 0;
+							rearm_alarm(); /* will revive it in RETRYTIME sec */
+							restore_sigmask(&omask);
+							maybe_close(new_udp_fd);
+							maybe_close(accepted_fd);
+							continue; /* -> check next fd in fd set */
+						}
+						sep->se_count = 0;
+					}
+				}
+				/* on NOMMU, streamed chargen
+				 * builtin wouldn't work, but it is
+				 * not allowed on NOMMU (ifdefed out) */
+#ifdef INETD_BUILTINS_ENABLED
+				if (BB_MMU && sep->se_builtin)
+					pid = fork();
+				else
+#endif
+					pid = vfork();
+
+				if (pid < 0) { /* fork error */
+					bb_simple_perror_msg("vfork"+1);
+					sleep1();
+					restore_sigmask(&omask);
+					maybe_close(new_udp_fd);
+					maybe_close(accepted_fd);
+					continue; /* -> check next fd in fd set */
+				}
+				if (pid == 0)
+					pid--; /* -1: "we did fork and we are child" */
+			}
+			/* if pid == 0 here, we didn't fork */
+
+			if (pid > 0) { /* parent */
+				if (sep->se_wait) {
+					/* wait: we passed socket to child,
+					 * will wait for child to terminate */
+					sep->se_wait = pid;
+					remove_fd_from_set(sep->se_fd);
+				}
+				if (new_udp_fd >= 0) {
+					/* udp nowait: child connected the socket,
+					 * we created and will use new, unconnected one */
+					xmove_fd(new_udp_fd, sep->se_fd);
+					dbg("moved new_udp_fd:%d to sep->se_fd:%d\n", new_udp_fd, sep->se_fd);
+				}
+				restore_sigmask(&omask);
+				maybe_close(accepted_fd);
+				continue; /* -> check next fd in fd set */
+			}
+
+			/* we are either child or didn't fork at all */
+#ifdef INETD_BUILTINS_ENABLED
+			if (sep->se_builtin) {
+				if (pid) { /* "pid" is -1: we did fork */
+					close(sep->se_fd); /* listening socket */
+					dbg("closed sep->se_fd:%d\n", sep->se_fd);
+					logmode = LOGMODE_NONE; /* make xwrite etc silent */
+				}
+				restore_sigmask(&omask);
+				if (sep->se_socktype == SOCK_STREAM)
+					sep->se_builtin->bi_stream_fn(ctrl, sep);
+				else
+					sep->se_builtin->bi_dgram_fn(ctrl, sep);
+				if (pid) /* we did fork */
+					_exit_FAILURE();
+				maybe_close(accepted_fd);
+				continue; /* -> check next fd in fd set */
+			}
+#endif
+			/* child */
+			setsid();
+			/* "nowait" udp */
+			if (new_udp_fd >= 0) {
+				len_and_sockaddr *lsa;
+				int r;
+
+				close(new_udp_fd);
+				dbg("closed new_udp_fd:%d\n", new_udp_fd);
+				lsa = xzalloc_lsa(sep->se_family);
+				/* peek at the packet and remember peer addr */
+				r = recvfrom(ctrl, NULL, 0, MSG_PEEK|MSG_DONTWAIT,
+					&lsa->u.sa, &lsa->len);
+				if (r < 0)
+					goto do_exit1;
+				/* make this socket "connected" to peer addr:
+				 * only packets from this peer will be recv'ed,
+				 * and bare write()/send() will work on it */
+				connect(ctrl, &lsa->u.sa, lsa->len);
+				dbg("connected ctrl:%d to remote peer\n", ctrl);
+				free(lsa);
+			}
+			/* prepare env and exec program */
+			pwd = getpwnam(sep->se_user);
+			if (pwd == NULL) {
+				bb_error_msg("%s: no such %s", sep->se_user, "user");
+				goto do_exit1;
+			}
+			if (sep->se_group && (grp = getgrnam(sep->se_group)) == NULL) {
+				bb_error_msg("%s: no such %s", sep->se_group, "group");
+				goto do_exit1;
+			}
+			if (real_uid != 0 && real_uid != pwd->pw_uid) {
+				/* a user running private inetd */
+				bb_simple_error_msg("non-root must run services as himself");
+				goto do_exit1;
+			}
+			if (pwd->pw_uid != real_uid) {
+				if (sep->se_group)
+					pwd->pw_gid = grp->gr_gid;
+				/* initgroups, setgid, setuid: */
+				change_identity(pwd);
+			} else if (sep->se_group) {
+				xsetgid(grp->gr_gid);
+				setgroups(1, &grp->gr_gid);
+			}
+			if (rlim_ofile.rlim_cur != rlim_ofile_cur)
+				if (setrlimit(RLIMIT_NOFILE, &rlim_ofile) < 0)
+					bb_simple_perror_msg("setrlimit");
+
+			/* closelog(); - WRONG. we are after vfork,
+			 * this may confuse syslog() internal state.
+			 * Let's hope libc sets syslog fd to CLOEXEC...
+			 */
+			xmove_fd(ctrl, STDIN_FILENO);
+			xdup2(STDIN_FILENO, STDOUT_FILENO);
+			dbg("moved ctrl:%d to fd 0,1[,2]\n", ctrl);
+			/* manpages of inetd I managed to find either say
+			 * that stderr is also redirected to the network,
+			 * or do not talk about redirection at all (!) */
+			if (!sep->se_wait) /* only for usual "tcp nowait" */
+				xdup2(STDIN_FILENO, STDERR_FILENO);
+			/* NB: among others, this loop closes listening sockets
+			 * for nowait stream children */
+			for (sep2 = serv_list; sep2; sep2 = sep2->se_next)
+				if (sep2->se_fd != ctrl)
+					maybe_close(sep2->se_fd);
+			sigaction_set(SIGPIPE, &saved_pipe_handler);
+			restore_sigmask(&omask);
+			dbg("execing:'%s'\n", sep->se_program);
+			BB_EXECVP(sep->se_program, sep->se_argv);
+			bb_perror_msg("can't execute '%s'", sep->se_program);
+ do_exit1:
+			/* eat packet in udp case */
+			if (sep->se_socktype != SOCK_STREAM)
+				recv(0, line, LINE_SIZE, MSG_DONTWAIT);
+			_exit_FAILURE();
+		} /* for (sep = servtab...) */
+	} /* for (;;) */
+```
+
+---
+
+## `crond`
+
+Time-based execution of commands
+- Event loop to execute scheduled commands
+
+```mermaid
+stateDiagram-v2
+	state "exec commands" as exec
+	[*] --> sleep
+	sleep --> exec
+	exec --> sleep
+
+```
+
+---
+
+## `crond` [Example](https://man7.org/linux/man-pages/man5/crontab.5.html)
+
+```
+# run five minutes after midnight, every day
+5 0 * * *       $HOME/bin/daily.job >> $HOME/tmp/out 2>&1
+# run at 2:15pm on the first of every month -- output mailed to paul
+15 14 1 * *     $HOME/bin/monthly
+# run at 10 pm on weekdays, annoy Joe
+0 22 * * 1-5    mail -s "It's 10pm" joe%Joe,%%Where are your kids?%
+23 0-23/2 * * * echo "run 23 minutes after midn, 2am, 4am ..., everyday"
+5 4 * * sun     echo "run at 5 after 4 every sunday"
+```
+
+---
+
+```c [8|40|48]
+	for (;;) {
+		struct stat sbuf;
+		time_t t1;
+		long dt;
+
+		/* Synchronize to 1 minute, minimum 1 second */
+		t1 = t2;
+		sleep(sleep_time - (time(NULL) % sleep_time));
+		t2 = time(NULL);
+		dt = (long)t2 - (long)t1;
+
+		reopen_logfile_to_stderr();
+
+		/*
+		 * The file 'cron.update' is checked to determine new cron
+		 * jobs.  The directory is rescanned once an hour to deal
+		 * with any screwups.
+		 *
+		 * Check for time jump.  Disparities over an hour either way
+		 * result in resynchronization.  A negative disparity
+		 * less than an hour causes us to effectively sleep until we
+		 * match the original time (i.e. no re-execution of jobs that
+		 * have just been run).  A positive disparity less than
+		 * an hour causes intermediate jobs to be run, but only once
+		 * in the worst case.
+		 *
+		 * When running jobs, the inequality used is greater but not
+		 * equal to t1, and less then or equal to t2.
+		 */
+		if (stat(G.crontab_dir_name, &sbuf) != 0)
+			sbuf.st_mtime = 0; /* force update (once) if dir was deleted */
+		if (G.crontab_dir_mtime != sbuf.st_mtime) {
+			G.crontab_dir_mtime = sbuf.st_mtime;
+			rescan = 1;
+		}
+		if (--rescan == 0) {
+			rescan = 60;
+			rescan_crontab_dir();
+		}
+		process_cron_update_file();
+		log5("wakeup dt=%ld", dt);
+		if (dt < -60 * 60 || dt > 60 * 60) {
+			bb_info_msg("time disparity of %ld minutes detected", dt / 60);
+			/* and we do not run any jobs in this case */
+		} else if (dt > 0) {
+			/* Usual case: time advances forward, as expected */
+			flag_starting_jobs(t1, t2);
+			start_jobs(START_ME_NORMAL);
+			sleep_time = 60;
+			if (check_completions() > 0) {
+				/* some jobs are still running */
+				sleep_time = 10;
+			}
+		}
+		/* else: time jumped back, do not run any jobs */
+	} /* for (;;) */
+```
+
+---
+
+## Daemons for System Management
+
+Simple execution patterns
+
+- sleep -> process
+- client req -> server execution
+
+Why not more complex?
+- Many dynamic behaviors
+- Benefit of central coordination
+
+---
+
+## `systemd`
+
+Set of system daemons
+- DBus communication - pub/sub
+- Activation of servers - in response to requests on the system
+- Active management of system (power, network, settings, qemu, printer, containers)
+
+```
+$ systemctl
+```
+
+---
+
+# Plan 9
+
+---
+
+## Apps expose functionality via VFS
+
+VFS files/directories in an app's subdirectory
+- can reflect app state
+- can be updated to change app state
+
+Don't need `systemd` to coordinate app $\leftrightarrow$ service interactions
+- VFS is the shared coordination medium
+
+---
+
+``` [1|2-5|6]
+$ echo "home https://faculty.cs.gwu.edu/gparmer/pubs.html" > /apps/firefox/newtab
+$ cat /apps/firefox/home/ul/li/span/contents | head -n 3
+Edge-RT: OS Support for Controlled Latency in the Multi-Tenant, Real-Time Edge
+SBIs: Application Access to Safe, Baremetal Interrupt Latencies
+The Thundering Herd: Amplifying Kernel Interference to Attack Response Times
+$ echo "<li>Gabriel Parmer, <span class="text-info">MY NEW PAPER</span></li>" >> /apps/firefox/home/ul/content
+```
+
+---
+
+## Remote/Local VFS
+
+- Can mount remote VFS locally
+  - `importfs`
+- Can mount local VFS into remote computation
+  - `exportfs`
+
+---
+
+## [9p Protocol](https://9fans.github.io/plan9port/man/man9/)
+
+[9p](https://9fans.github.io/plan9port/man/man9/intro.html): Remote VFS protocol
+
+- create
+- open
+- read
+- write
+- remove
+- stat
+- [attach](https://9fans.github.io/plan9port/man/man9/attach.html)
+- [walk](https://9fans.github.io/plan9port/man/man9/walk.html)
+
+Kernel speaks this protocol, and reflects it into the local VFS
+                    </textarea>
+                </section>
+            </div>
+        </div>
+        <script src="assets/reveal-js/dist/reveal.js"></script>
+        <script src="assets/reveal-js/plugin/markdown/markdown.js"></script>
+        <script src="assets/reveal-js/plugin/highlight/highlight.js"></script>
+        <script src="assets/reveal-js/plugin/zoom/zoom.js"></script>
+        <script src="assets/reveal-js/plugin/notes/notes.js"></script>
+        <script src="assets/reveal-js/plugin/math/math.js"></script>
+
+        
+            
+                
+                    
+                        <script src="https://cdn.jsdelivr.net/npm/reveal.js-mermaid-plugin/plugin/mermaid/mermaid.min.js"></script>
+                    
+                
+            
+        
+
+        <script>
+            Reveal.initialize({
+                
+                    
+                        history: true,
+                    
+                        slideNumber: "c/t",
+                    
+                        transition: "fade",
+                    
+                
+                plugins: [
+                    RevealMarkdown,
+                    RevealHighlight,
+                    RevealZoom,
+                    RevealNotes,
+                    RevealMath,
+
+                    
+                        
+                            
+                                RevealMermaid,
+                            
+                        
+                    
+                ],
+            });
+        </script>
+    </body>
+</html>

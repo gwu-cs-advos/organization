@@ -179,7 +179,7 @@ Some interesting code entry points:
 - The core logic for [handling execution abstractions](https://github.com/gwu-cs-advos/go/blob/master/src/runtime/proc.go) and scheduling.
   - Condition variable blocking on [`gopark`](https://github.com/gwu-cs-advos/go/blob/master/src/runtime/proc.go#L418)
   - [Scheduling!](https://github.com/gwu-cs-advos/go/blob/master/src/runtime/proc.go#L3988)
-- Channel send](https://github.com/gwu-cs-advos/go/blob/master/src/runtime/chan.go#L176)
+- [Channel send](https://github.com/gwu-cs-advos/go/blob/master/src/runtime/chan.go#L176)
 There are a lot of details about garbage collection here (memory barriers, tracing, "stopping the world", etc...), that should instantly be mentally "pruned" in your pass through the code.
 
 Questions:

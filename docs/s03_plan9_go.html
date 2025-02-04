@@ -1,0 +1,809 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+
+        
+
+        <link rel="stylesheet" href="assets/reveal-js/dist/reveal.css" />
+
+        
+            <link rel="stylesheet" href="assets/theme.css" />
+        
+        
+            <link rel="stylesheet" href="assets/nord.css" />
+        
+
+        
+            
+        
+    </head>
+    <body>
+        <div class="reveal">
+            <div class="slides">
+                <section data-markdown
+                
+                    data-separator-vertical="^\s*-v-\s*$"
+                
+                    data-separator-notes="^Notes?:"
+                
+                >
+                    <textarea data-template>
+                        # Plan 9 & `go`
+
+<div class="center">
+
+**Gabe Parmer**
+
+© Gabe Parmer, 2025, All rights reserved
+
+</div>
+
+---
+
+# Plan 9
+
+---
+
+## Apps expose functionality via VFS
+
+VFS files/directories in an app's subdirectory
+- can reflect app state
+- can be updated to change app state
+
+Don't need `systemd` to coordinate app $\leftrightarrow$ service interactions
+- VFS is the shared coordination medium
+
+---
+
+## Everything Is A File (EIAF)
+
+- FS path used to identify and operate on *all* resources
+- Linux: some exceptions (sockets, application resources, etc...)
+- Plan9: Even applications can export resources via VFS
+
+---
+
+## Implement App EIAF in Linux
+
+```mermaid
+block-beta
+	columns 2
+	block p0["app"] end
+	block p1["app"] end
+	vfs["VFS interface"]:2
+	fs["FS"]
+	pfs["ProcFS"]
+	sfs["SysFS"]
+	tfs["TmpFS"]
+	dfs["DevFS"]
+	afs(["AppFS??"])
+```
+
+---
+
+## Implement App EIAF in Plan 9
+
+<div class="multicolumn"><div>
+
+```mermaid
+block-beta
+	columns 2
+	block p0["app"] end
+	block p1["AppSrvFS"] end
+	vfs["VFS interface"]:2
+	fs["FS"]
+	pfs["ProcFS"]
+	sfs["SysFS"]
+	tfs["TmpFS"]
+	dfs["DevFS"]
+	space
+```
+
+</div><div>
+
+```mermaid
+flowchart TB
+
+subgraph .
+c["App"]
+end
+subgraph .
+a["AppSrvFS"]
+end
+
+subgraph kernel
+vfs["VFS Interface"]
+path["Path Resolution"]
+9p["9P Protocol"]
+end
+
+c-->vfs
+vfs-->path
+9p-->path
+a-->9p
+```
+
+</div></div>
+
+---
+
+## (Logical) Plan 9 Interactions
+
+```mermaid
+sequenceDiagram
+	autonumber
+    client->>VFS: open("/app/ff/...", ...)
+    VFS->>9p: path_to_9p(...)
+	AppSrvFS->>9p: read(...)
+    9p->>AppSrvFS: 9p_message = read(...)
+    AppSrvFS->>9p: write(..., 9p_reply_msg, ...)
+	9p->>VFS: file = path_to_9p(...)
+	VFS->>client: fd = open(...)
+```
+
+---
+
+## Remote/Local VFS
+
+- `exportfs`: Present the local FS as a 9P channel
+  - can be remotely accessed
+- `import`: ~~Mount remote VFS locally~~ Run a command on a remote FS, or mount a remote VFS locally
+  - The command can present an application-specific interpretation of the remote FS
+
+---
+
+## [Example](https://9p.io/wiki/plan9/9p_services_using_srv,_listen,_exportfs,_import/index.html)
+
+```
+server% aux/listen1 -v tcp!*!9999 /bin/exportfs -a
+
+client% import tcp!server!9999 /remote/path /local/mountpoint
+```
+
+`aux/listen1` just sets up a command to have a network connection as stdin/out
+
+---
+
+## `import` Logic is Subtle
+
+The core:
+- Talk to a remote 9p endpoint
+- Attach it to our local FS
+- Other options...
+
+---
+
+```c [1-157|12-64|96-101|107,114,117|148]
+void
+main(int argc, char **argv)
+{
+	char *mntpt, *srvpost, srvfile[64];
+	int backwards = 0, fd, mntflags, oldserver, notree;
+
+	quotefmtinstall();
+	srvpost = nil;
+	oldserver = 0;
+	notree = 0;
+	mntflags = MREPL;
+	ARGBEGIN{
+	case 'A':
+		doauth = 0;
+		break;
+	case 'a':
+		mntflags = MAFTER;
+		break;
+	case 'b':
+		mntflags = MBEFORE;
+		break;
+	case 'c':
+		mntflags |= MCREATE;
+		break;
+	case 'C':
+		mntflags |= MCACHE;
+		break;
+	case 'd':
+		debug++;
+		break;
+	case 'f':
+		/* ignored but allowed for compatibility */
+		break;
+	case 'O':
+	case 'o':
+		oldserver = 1;
+		break;
+	case 'E':
+		if ((encproto = lookup(EARGF(usage()), encprotos)) < 0)
+			usage();
+		break;
+	case 'e':
+		ealgs = EARGF(usage());
+		if(*ealgs == 0 || strcmp(ealgs, "clear") == 0)
+			ealgs = nil;
+		break;
+	case 'k':
+		keyspec = EARGF(usage());
+		break;
+	case 'p':
+		filterp = aan;
+		break;
+	case 's':
+		srvpost = EARGF(usage());
+		break;
+	case 'B':
+		backwards = 1;
+		break;
+	case 'm':
+		notree = 1;
+		break;
+	default:
+		usage();
+	}ARGEND;
+
+	mntpt = 0;		/* to shut up compiler */
+	if(backwards){
+		switch(argc) {
+		default:
+			mntpt = argv[0];
+			break;
+		case 0:
+			usage();
+		}
+	} else {
+		switch(argc) {
+		case 2:
+			mntpt = argv[1];
+			break;
+		case 3:
+			if(notree)
+				usage();
+			mntpt = argv[2];
+			break;
+		default:
+			usage();
+		}
+	}
+
+	if (encproto == Enctls)
+		sysfatal("%s: tls has not yet been implemented", argv[0]);
+
+	notify(catcher);
+	alarm(60*1000);
+
+	if(backwards)
+		fd = passive();
+	else if(notree)
+		fd = connect(argv[0], nil, oldserver);
+	else
+		fd = connect(argv[0], argv[1], oldserver);
+
+	if (!oldserver)
+		fprint(fd, "impo %s %s\n", filterp? "aan": "nofilter",
+			encprotos[encproto]);
+
+	if (encproto != Encnone && ealgs && ai) {
+		uchar key[16];
+		uchar digest[SHA1dlen];
+		char fromclientsecret[21];
+		char fromserversecret[21];
+		int i;
+
+		memmove(key+4, ai->secret, ai->nsecret);
+
+		/* exchange random numbers */
+		srand(truerand());
+		for(i = 0; i < 4; i++)
+			key[i] = rand();
+		if(write(fd, key, 4) != 4)
+			sysfatal("can't write key part: %r");
+		if(readn(fd, key+12, 4) != 4)
+			sysfatal("can't read key part: %r");
+
+		/* scramble into two secrets */
+		sha1(key, sizeof(key), digest, nil);
+		mksecret(fromclientsecret, digest);
+		mksecret(fromserversecret, digest+10);
+
+		if (filterp)
+			fd = filter(fd, filterp, argv[0]);
+
+		/* set up encryption */
+		procsetname("pushssl");
+		fd = pushssl(fd, ealgs, fromclientsecret, fromserversecret, nil);
+		if(fd < 0)
+			sysfatal("can't establish ssl connection: %r");
+	}
+	else if (filterp)
+		fd = filter(fd, filterp, argv[0]);
+
+	if(srvpost){
+		sprint(srvfile, "/srv/%s", srvpost);
+		remove(srvfile);
+		post(srvfile, srvpost, fd);
+	}
+	procsetname("mount on %s", mntpt);
+	if(mount(fd, -1, mntpt, mntflags, "") < 0)
+		sysfatal("can't mount %s: %r", argv[1]);
+	alarm(0);
+
+	if(backwards && argc > 1){
+		exec(argv[1], &argv[1]);
+		sysfatal("exec: %r");
+	}
+	exits(0);
+}
+
+
+
+
+
+```
+
+---
+
+## `mount`: UNIX vs. Plan9
+
+UNIX: $/dev/device \to /path/to/mount/$
+```c
+int mount(const char *source, const char *target,
+      char *filesystemtype, unsigned long mountflags,
+	  void *data);
+```
+- `filesystemtype` is a magic string corresponding to some FS type
+- `data` is FS-specific
+
+---
+
+## `mount`: UNIX vs. Plan9
+
+plan9: $9p fd \to /path/to/mount/$
+```c
+int mount(int fd, int afd, char *old,
+          int flag, char *aname)
+```
+- `fd` a 9p-speaking file-descriptor - anything can be on the other end!
+- `old` the directory in which to present the `fd`'s FS!
+
+---
+
+## [9p Protocol](https://9fans.github.io/plan9port/man/man9/)
+
+[9p](https://9fans.github.io/plan9port/man/man9/intro.html): Remote VFS protocol
+
+- create
+- open
+- read
+- write
+- remove
+- stat
+- [attach](https://9fans.github.io/plan9port/man/man9/attach.html)
+- [walk](https://9fans.github.io/plan9port/man/man9/walk.html)
+
+Kernel speaks this protocol, and reflects it into the local VFS
+
+[Serialization](https://github.com/gwu-cs-advos/plan9/blob/master/sys/src/libc/9sys/convM2S.c#51) and [deserialization](https://github.com/gwu-cs-advos/plan9/blob/master/sys/src/libc/9sys/convS2M.c#L197) functions
+
+---
+
+## 9p Example: `exportfs`
+
+```c [1-318|303-317|322-337]
+void
+main(int argc, char **argv)
+{
+	char buf[ERRMAX], ebuf[ERRMAX], *srvfdfile;
+	Fsrpc *r;
+	int doauth, n, fd;
+	char *dbfile, *srv, *na, *nsfile, *keyspec;
+	AuthInfo *ai;
+	ulong initial;
+
+	dbfile = "/tmp/exportdb";
+	srv = nil;
+	srvfd = -1;
+	srvfdfile = nil;
+	na = nil;
+	nsfile = nil;
+	keyspec = "";
+	doauth = 0;
+
+	ai = nil;
+	ARGBEGIN{
+	case 'a':
+		doauth = 1;
+		break;
+
+	case 'd':
+		dbg++;
+		break;
+
+	case 'e':
+		ealgs = EARGF(usage());
+		if(*ealgs == 0 || strcmp(ealgs, "clear") == 0)
+			ealgs = nil;
+		break;
+
+	case 'f':
+		dbfile = EARGF(usage());
+		break;
+
+	case 'k':
+		keyspec = EARGF(usage());
+		break;
+
+	case 'm':
+		messagesize = strtoul(EARGF(usage()), nil, 0);
+		break;
+
+	case 'n':
+		nonone = 0;
+		break;
+
+	case 'r':
+		srv = EARGF(usage());
+		break;
+
+	case 's':
+		srv = "/";
+		break;
+
+	case 'A':
+		anstring = EARGF(usage());
+		break;
+
+	case 'B':
+		na = EARGF(usage());
+		break;
+
+	case 'F':
+		/* accepted but ignored, for backwards compatibility */
+		break;
+
+	case 'N':
+		nsfile = EARGF(usage());
+		break;
+
+	case 'P':
+		patternfile = EARGF(usage());
+		break;
+
+	case 'R':
+		readonly = 1;
+		break;
+
+	case 'S':
+		if(srvfdfile)
+			usage();
+		srvfdfile = EARGF(usage());
+		break;
+
+	default:
+		usage();
+	}ARGEND
+	USED(argc, argv);
+
+	if(doauth){
+		/*
+		 * We use p9any so we don't have to visit this code again, with the
+		 * cost that this code is incompatible with the old world, which
+		 * requires p9sk2. (The two differ in who talks first, so compatibility
+		 * is awkward.)
+		 */
+		ai = auth_proxy(0, auth_getkey, "proto=p9any role=server %s", keyspec);
+		if(ai == nil)
+			fatal("auth_proxy: %r");
+		if(nonone && strcmp(ai->cuid, "none") == 0)
+			fatal("exportfs by none disallowed");
+		if(auth_chuid(ai, nsfile) < 0)
+			fatal("auth_chuid: %r");
+		putenv("service", "exportfs");
+	}
+
+	if(srvfdfile){
+		if((srvfd = open(srvfdfile, ORDWR)) < 0)
+			sysfatal("open '%s': %r", srvfdfile);
+	}
+
+	if(na){
+		if(srv == nil)
+			sysfatal("-B requires -s");
+
+		local = "me";
+		remote = na;
+		if((fd = dial(netmkaddr(na, 0, "importfs"), 0, 0, 0)) < 0)
+			sysfatal("can't dial %s: %r", na);
+
+		ai = auth_proxy(fd, auth_getkey, "proto=p9any role=client %s", keyspec);
+		if(ai == nil)
+			sysfatal("%r: %s", na);
+
+		dup(fd, 0);
+		dup(fd, 1);
+		close(fd);
+	}
+
+	exclusions();
+
+	if(dbg) {
+		n = create(dbfile, OWRITE|OTRUNC, 0666);
+		dup(n, DFD);
+		close(n);
+	}
+
+	if(srvfd >= 0 && srv){
+		fprint(2, "exportfs: -S cannot be used with -r or -s\n");
+		usage();
+	}
+
+	DEBUG(DFD, "exportfs: started\n");
+
+	rfork(RFNOTEG);
+
+	if(messagesize == 0){
+		messagesize = iounit(netfd);
+		if(messagesize == 0)
+			messagesize = 8192+IOHDRSZ;
+	}
+
+	Workq = emallocz(sizeof(Fsrpc)*Nr_workbufs);
+//	for(i=0; i<Nr_workbufs; i++)
+//		Workq[i].buf = emallocz(messagesize);
+	fhash = emallocz(sizeof(Fid*)*FHASHSIZE);
+
+	fmtinstall('F', fcallfmt);
+
+	/*
+	 * Get tree to serve from network connection,
+	 * check we can get there and ack the connection
+ 	 */
+	if(srvfd != -1) {
+		/* do nothing */
+	}
+	else if(srv) {
+		if(chdir(srv) < 0) {
+			errstr(ebuf, sizeof ebuf);
+			fprint(0, "chdir(\"%s\"): %s\n", srv, ebuf);
+			DEBUG(DFD, "chdir(\"%s\"): %s\n", srv, ebuf);
+			exits(ebuf);
+		}
+		DEBUG(DFD, "invoked as server for %s", srv);
+		strncpy(buf, srv, sizeof buf);
+	}
+	else {
+		noteconn(netfd);
+		buf[0] = 0;
+		n = read(0, buf, sizeof(buf)-1);
+		if(n < 0) {
+			errstr(buf, sizeof buf);
+			fprint(0, "read(0): %s\n", buf);
+			DEBUG(DFD, "read(0): %s\n", buf);
+			exits(buf);
+		}
+		buf[n] = 0;
+		if(chdir(buf) < 0) {
+			errstr(ebuf, sizeof ebuf);
+			fprint(0, "chdir(%d:\"%s\"): %s\n", n, buf, ebuf);
+			DEBUG(DFD, "chdir(%d:\"%s\"): %s\n", n, buf, ebuf);
+			exits(ebuf);
+		}
+	}
+
+	DEBUG(DFD, "\niniting root\n");
+	initroot();
+
+	DEBUG(DFD, "exportfs: %s\n", buf);
+
+	if(srv == nil && srvfd == -1 && write(0, "OK", 2) != 2)
+		fatal("open ack write");
+
+	if (readn(netfd, &initial, sizeof(ulong)) < sizeof(ulong))
+		fatal("can't read initial string: %r\n");
+
+	if (strncmp((char *)&initial, "impo", sizeof(ulong)) == 0) {
+		char buf[128], *p, *args[3];
+
+		/* New import.  Read import's parameters... */
+		initial = 0;
+
+		p = buf;
+		while (p - buf < sizeof buf) {
+			if ((n = read(netfd, p, 1)) < 0)
+				fatal("can't read impo arguments: %r\n");
+
+			if (n == 0)
+				fatal("connection closed while reading arguments\n");
+
+			if (*p == '\n')
+				*p = '\0';
+			if (*p++ == '\0')
+				break;
+		}
+
+		if (tokenize(buf, args, nelem(args)) != 2)
+			fatal("impo arguments invalid: impo%s...\n", buf);
+
+		if (strcmp(args[0], "aan") == 0)
+			filterp = aanfilter;
+		else if (strcmp(args[0], "nofilter") != 0)
+			fatal("import filter argument unsupported: %s\n", args[0]);
+
+		if (strcmp(args[1], "ssl") == 0)
+			encproto = Encssl;
+		else if (strcmp(args[1], "tls") == 0)
+			encproto = Enctls;
+		else if (strcmp(args[1], "clear") != 0)
+			fatal("import encryption proto unsupported: %s\n", args[1]);
+
+		if (encproto == Enctls)
+			sysfatal("%s: tls has not yet been implemented", argv[0]);
+	}
+
+	if (encproto != Encnone && ealgs && ai) {
+		uchar key[16];
+		uchar digest[SHA1dlen];
+		char fromclientsecret[21];
+		char fromserversecret[21];
+		int i;
+
+		memmove(key+4, ai->secret, ai->nsecret);
+
+		/* exchange random numbers */
+		srand(truerand());
+		for(i = 0; i < 4; i++)
+			key[i+12] = rand();
+
+		if (initial)
+			fatal("Protocol botch: old import\n");
+		if(readn(netfd, key, 4) != 4)
+			fatal("can't read key part; %r\n");
+
+		if(write(netfd, key+12, 4) != 4)
+			fatal("can't write key part; %r\n");
+
+		/* scramble into two secrets */
+		sha1(key, sizeof(key), digest, nil);
+		mksecret(fromclientsecret, digest);
+		mksecret(fromserversecret, digest+10);
+
+		if (filterp)
+			netfd = filter(netfd, filterp);
+
+		switch (encproto) {
+		case Encssl:
+			netfd = pushssl(netfd, ealgs, fromserversecret,
+						fromclientsecret, nil);
+			break;
+		case Enctls:
+		default:
+			fatal("Unsupported encryption protocol\n");
+		}
+
+		if(netfd < 0)
+			fatal("can't establish ssl connection: %r");
+	}
+	else if (filterp) {
+		if (initial)
+			fatal("Protocol botch: don't know how to deal with this\n");
+		netfd = filter(netfd, filterp);
+	}
+
+	/*
+	 * Start serving file requests from the network
+	 */
+	for(;;) {
+		r = getsbuf();
+		if(r == 0)
+			fatal("Out of service buffers");
+
+		n = localread9pmsg(netfd, r->buf, messagesize, &initial);
+		if(n <= 0)
+			fatal(nil);
+
+		if(convM2S(r->buf, n, &r->work) == 0)
+			fatal("convM2S format error");
+
+		DEBUG(DFD, "%F\n", &r->work);
+		(fcalls[r->work.type])(r);
+	}
+}
+
+/* ... */
+
+void (*fcalls[])(Fsrpc*) =
+{
+	[Tversion]	Xversion,
+	[Tauth]	Xauth,
+	[Tflush]	Xflush,
+	[Tattach]	Xattach,
+	[Twalk]		Xwalk,
+	[Topen]		slave,
+	[Tcreate]	Xcreate,
+	[Tclunk]	Xclunk,
+	[Tread]		slave,
+	[Twrite]	slave,
+	[Tremove]	Xremove,
+	[Tstat]		Xstat,
+	[Twstat]	Xwstat,
+};
+
+
+
+
+
+```
+
+---
+
+# `go`
+
+---
+
+## `go`
+
+Programming language + runtime:
+- M:N threading for fast "goroutine" creation
+- channel-based concurrency
+- switch statements that let you await a # of channels
+- garbage collection
+- structural subtyping
+
+---
+
+## `go` Runtime
+
+- `g` goroutines, `m` OS thread, `p` is a core
+- Scheduling of goroutines on OS threads
+- Determining how many OS threads should be used
+- Blocking/waking on channels/condition variables
+                    </textarea>
+                </section>
+            </div>
+        </div>
+        <script src="assets/reveal-js/dist/reveal.js"></script>
+        <script src="assets/reveal-js/plugin/markdown/markdown.js"></script>
+        <script src="assets/reveal-js/plugin/highlight/highlight.js"></script>
+        <script src="assets/reveal-js/plugin/zoom/zoom.js"></script>
+        <script src="assets/reveal-js/plugin/notes/notes.js"></script>
+        <script src="assets/reveal-js/plugin/math/math.js"></script>
+
+        
+            
+                
+                    
+                        <script src="https://cdn.jsdelivr.net/npm/reveal.js-mermaid-plugin/plugin/mermaid/mermaid.min.js"></script>
+                    
+                
+            
+        
+
+        <script>
+            Reveal.initialize({
+                
+                    
+                        history: true,
+                    
+                        slideNumber: "c/t",
+                    
+                        transition: "fade",
+                    
+                
+                plugins: [
+                    RevealMarkdown,
+                    RevealHighlight,
+                    RevealZoom,
+                    RevealNotes,
+                    RevealMath,
+
+                    
+                        
+                            
+                                RevealMermaid,
+                            
+                        
+                    
+                ],
+            });
+        </script>
+    </body>
+</html>

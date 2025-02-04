@@ -258,3 +258,147 @@ This is true in the plan9 adaptation to Linux as user-level libraries, but is *n
 > What does it mean to "import from a remote system"?
 
 We are taking a directory in the file system hierarchy on a *remote host*, and mounting it locally into our system so that we can see it as if it is local (i.e. if you do `ls`, you'll see its contents).
+
+> Everything is a file and some of the FS operations in Plan 9 seem powerful, why aren't they more used?
+
+Linux's FUSE has been doing similar things (exposing application state in the FS) for a long time.
+You've likely used it without knowing!
+9p was also used for a long time as the "file-level protocol" of choice for virtual machines (via `virtio-9p`).
+
+> Isn't there a significant performance penalty to having FS operations all use 9p and potentially user-level computations?
+
+Yes!
+This turns all FS accesses into IPC, and, similar to microkernels, if IPC isn't optimized, it can significantly slow down your system.
+Plan 9 never had a significant focus on performance as it was deemed "fast enough".
+
+> Does the per-process namespace make it easier to implement containers in Plan 9?
+
+Yes!
+This, combined with the fact that there aren't that many namespaces -- mostly focused on the hierarchical FS namespace -- containers are pretty trivial in 9p.
+Even better, one almost doesn't need containers as you can simply mount the file system hierarchy you want your "container" to have *from a remote system*.
+
+> There are terms in the source that aren't quite acceptable anymore, for example the `slave` function in exportfs...how have software norms around this changed over time?
+
+There was a significant movement to rename the `master` branch that was the default in `git` and `github` to `main` a few years back.
+As social norms change, they sometimes impact software.
+It is more common for them to impact the interface we use to software as many more users see that, but sometimes it impacts how we *develop* software as well.
+
+> Where is `rfork` implemented? This is so hard to find!
+
+Most system call layers in OSes will take a system call `X` and call a function like `sysX` as the first step to executing the system call.
+Often that function will call another function `X` in the code, but not always.
+So the core implementation is in [`sysrfork`](https://github.com/gwu-cs-advos/plan9/blob/7524062cfa4689019a4ed6fc22500ec209522ef0/sys/src/9/port/sysproc.c#L24-L207) in this case.
+
+> How does `exportfs` handle resource exhaustion if it creates too many processes to handle `read`/`write`/`open` requests?
+
+It doesn't!
+The hope is that you scale up the number of threads you need to match the maximum concurrency, and hope that the difference between average and maximum isn't that much, or that the maximum is commonly used.
+Note also that Plan 9 threads don't have *too much state*, so they hopefully won't hog too much memory.
+However, most modern thread pools do indeed, enable themselves to be shrunk so that they can both increase in size to handle transient bursts of high concurrency, *and* shrink themselves down to conserve resources (mainly memory) during periods of low concurrency.
+
+Note that if you don't shrink your thread pool, it opens the system up for a resource exhaustion attack where an adversary attempts to create unreasonably large concurrency to force the allocation of many (millions) of threads.
+Putting an upper bound on the thread pool size is a somewhat hacky way to prevent this.
+
+> How does `exportfs` ensure consistent file updates when they are performed across concurrent threads?
+
+It is worse!
+File modifications might also be done by *other programs* on the system that hosts the filesystem!
+It looks like there is very little done to ensure consistency of various updates.
+However, this is similar to file updates in UNIX!
+Concurrent modifications can have strange results:
+
+Process 0:
+```c
+write(fd, "1", 1);
+write(fd, "2", 1);
+```
+
+Process 1:
+```c
+write(fd, "3", 1);
+write(fd, "4", 1);
+```
+
+Can result in a file with contents:
+
+```
+32
+```
+
+...with no atomicity.
+
+File locking can help prevent this, but it is *opt-in*, not portable, and somewhat broken.
+See the book for examples.
+
+In short, we don't really expect that two processes updating the same file will ever work!
+Programs that require this (e.g. sqlite) require their own locking primitives layered on top of the file accesses -- a semantic gap!
+
+> Why does Plan 9 use per-processes namespaces instead of a single global namespace?
+
+This enables
+- security in the sense that processes in a *separate namespace* cannot access VFS updates/changes made by other processes (e.g. if the sets of processes belong to different users),
+- containers in which the VFS API of different processes is tailored to what they require (i.e. the development image they need), and
+- it enables the distributed processing model of the system as different nodes are by-default separated in namespaces, but those namespaces can be merged to access remote resources using an access model consistent with local access.
+
+> Is Plan 9 mainly an exemplar of a system created around the 9p protocol?
+
+It is more.
+Without per-process namespaces, the abstractions in Plan 9 wouldn't really work.
+Without services like the plumber and applications like Acme to demonstrate how far the abstraction can be pushed, it would be under-motivated.
+Without the meticulous API design around, for example, the `mount` system call, 9P couldn't be deeply integrated into the system as a core structuring primitive.
+Without the strong push to ensure that everything is a file (e.g. including networking), the composability of the system would be greatly diminished.
+Without the granular resource sharing options in `rfork`, namespaces and the VFS couldn't be used to construct abstractions nor secure systems.
+
+All of these are in some way related to 9P and "everything is the VFS", but they are separate innovations.
+It is clear that many of these innovations were *more popular* than 9P: Linux has integrated most of them in a hackey way, but 9P is the one aspect that isn't really used!!!
+
+> Why does `rfork` start the process in user-mode?
+
+There's no reason for the process to, once switched to by the scheduler, execute in the kernel.
+All of the kernel computation for setting up the process is done in `rfork` not when we run that new process.
+Thus, the process is setup such that when the scheduler first runs the new process, it will essentially just "resume" it at user-level.
+
+> As each process can have its own namespace in Plan 9, does this effectively mean that each process can be its own container?
+
+Yes.
+Namespaces largely center around the VFS, but include other factors as well in Plan 9.
+As these can be intentionally shaped by `bind`, `mount`, and `rfork` flags, we can *design* the namespaces in accordance with some specification...like a docker file!
+Containers also contain the specifications of the file systems, but I'm sure that they can be implemented relatively simply in Plan 9.
+Note that Linux relies on UnionFS to enable files to be added into a shared set of directories from different collections of files or images.
+The core question with this is if the same file exists in two images, which version from which image should you use.
+Plan 9 was the first system I know of to enable this support through the [`flags` to `mount`](https://9p.io/magic/man2html/2/bind): `MREPL` and `MBEFORE`.
+
+> If processes in Plan 9 are treated as files can they be copied like a file?
+
+Yes!
+You can even do this in Linux: `cp /proc/self/mem my_memory`!
+The direct access to process memory file the VFS is one of the main ways that debuggers are implemented!
+When you print out a variable in a debugger, you're reaching into the memory (or a register) of the process through the VFS interface to get its value!
+
+> How does rendezvous work in Plan 9?
+
+[Rendezvous](https://en.wikipedia.org/wiki/Rendezvous_(Plan_9)) enables a process to block awaiting synchronization on a `tag` from another.
+Another process can call `rendezvous`, and if the `tag` matches that of the previous process, they will exchange values.
+You can see in `exportfs` how it is used to pass the "work" to be done to a thread in the thread pool.
+
+These `tag`s are a namespace that can be shared or not when a new process is created.
+
+The rendezvous mechanism is very similar to the `chan_*` API in xv6...which was written by one of the core authors of Plan 9!
+
+> If each process has its own view of the filesystem in Plan 9, doesn't this cause massive memory consumption?
+
+The kernel has to track each of the places where directories (mount points) in the VFS are created, which corresponds to each directory used in `mount` and `bind`.
+It seems like there's the low-tens of mount/bind points in a typical process, which isn't a large data-structure to track.
+Note that just because you see your own namespace, it doesn't mean that the resources in that namespace aren't shared.
+Two processes might separately see directories `/blah/` and `/foo/`, but the same 9P stream (e.g. from `import`) is mounted into the separate directories.
+Thus, the two processes see different namespaces, but within those namespaces, the contents of those files is identical.
+What namespace you see is orthogonal to resource sharing.
+This is a *required* feature of containers because you want to be able to run many containers and have them mostly share the underlying files (at least read-only, or copy-on-write).
+
+> Interesting that they maintain separate bodies of code for each architecture in Plan 9 instead of using `#define`s.
+
+Yes, they have very strong opinions about avoiding `#ifdef` hell.
+I believe their C variant doesn't even support them!
+Generally, if you can separate out specific features into functions, and use the build system to use the appropriate one, "normal code" can be cleaner.
+However, it can also mean you have to understand the build system to understand which version is being used which can be annoying.
+This is generally solvable so long as you provide build-system introspection into which files/objects are being used for a compilation.

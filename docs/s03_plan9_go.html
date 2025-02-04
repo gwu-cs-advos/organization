@@ -754,8 +754,7 @@ void (*fcalls[])(Fsrpc*) =
 - `flags` argument controls which resources
   - `RFMEM` - share member across parent/child
   - `RFPROC` - create a new process (otherwise change current proc)
-  - `RFNOTEG` - create a new "notes" IPC group for child
-  - `RFENVG`, `RFNAMEG`, `RFFDG` - copy the environ. variables, namespaces, and file-descriptor tables, rather than share with parent.
+  - `RFNOTEG`, `RFENVG`, `RFNAMEG`, `RFFDG` - copy the IPC notes, environ. variables, namespaces, and file-descriptor tables, rather than share with parent.
 - Adapted in Linux's `clone` system call
 
 ---

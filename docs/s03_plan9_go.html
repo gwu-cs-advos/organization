@@ -367,6 +367,19 @@ int mount(int fd, int afd, char *old,
 
 ---
 
+## Core Difference
+
+UNIX
+- Filesystem logic in the *kernel* used to make the device present as FS hierarchy.
+
+Plan 9
+- Filesystem logic on the other end of the `fd` used to make FS hierarchy.
+
+User-level definition of FS hierarchy + EIAF: uniform programming interface
+- Linux FUSE attempts to capture some of this goodness
+
+---
+
 ## [9p Protocol](https://9fans.github.io/plan9port/man/man9/)
 
 [9p](https://9fans.github.io/plan9port/man/man9/intro.html): Remote VFS protocol

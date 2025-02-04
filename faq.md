@@ -249,3 +249,12 @@ That means that there is no address virtualization.
 `busybox` is only a user-level program.
 
 ## Plan 9
+
+> There seems like a hard separation between creating threads and processes.
+
+This is true in the plan9 adaptation to Linux as user-level libraries, but is *not* the case in the Plan 9 source.
+`rfork` will make a new thread if `RFMEM` is passed as one of the bits in `flags`, otherwise copying memory.
+
+> What does it mean to "import from a remote system"?
+
+We are taking a directory in the file system hierarchy on a *remote host*, and mounting it locally into our system so that we can see it as if it is local (i.e. if you do `ls`, you'll see its contents).

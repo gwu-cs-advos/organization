@@ -563,11 +563,8 @@ flowchart TB
 - Challenging interactions between different tree branches
   - *deduplication* avoids memory copies
   - fast inter-VM communication
-- What "layer" of hierarchy is right for an app?
-  - Router: direct(ish) access to NIC
-  - HTTP server: networking stack
-- Components with multiple "children" must provide *resource isolation*
 - Same layering downsides - unrelated abstractions don't fit into levels (net vs. FS)
+- Components with multiple "children" must provide *resource isolation*
 
 ---
 

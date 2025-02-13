@@ -402,3 +402,31 @@ I believe their C variant doesn't even support them!
 Generally, if you can separate out specific features into functions, and use the build system to use the appropriate one, "normal code" can be cleaner.
 However, it can also mean you have to understand the build system to understand which version is being used which can be annoying.
 This is generally solvable so long as you provide build-system introspection into which files/objects are being used for a compilation.
+
+## `go`
+
+> How is the channel implementation synchronized? Isn't the mutex being used for the blocking path?
+
+Locks are used to protect `go`'s core run-time data-structures in many places.
+Since each `m` can be preempted at any point by the kernel, all data-structures either have to be updated with atomic instructions (where the logic allows), or protected with a lock.
+Those locks certainly can block (they are backed by `futex`es), but this source of blocking is seen as a different from the controlled concurrency and blocking of goroutines.
+It is simply a "cost of doing business" within the `go` runtime.
+Note that the span of the critical sections for such locks is *not impacted* by the application's code and is entirely a runtime-specific implementation detail.
+
+> Does goroutine stealing mean that each `p` has access to each other's runqueue?
+
+Yes!
+In the end, the runtime uses shared memory between each `p`, so they can access each other's runqueues.
+Of course, this requires synchronization, so the runqueues have to either be lock-free, or use locks.
+In `go`'s case, you can see that it [relies on atomic instructions](https://github.com/gwu-cs-advos/go/blob/6da16013ba4444e0d71540f68279f0283a92d05d/src/runtime/proc.go#L6865-L6886) and lock-free structures.
+
+> How does spinning threads avoid throughput issues?
+
+Threads actually don't spin in the `schedule` loop!
+The `mPark` function will block an OS thread (an `m`), so each iteration through the schedule loop will block a thread.
+The intuition is strong: if we can't find a goroutine to execute, then we have too many actual OS threads, so block one, perhaps to be woken later when we need more.
+
+> How does `go` schedule goroutines especially relative to channel operations?
+
+Generally, the `schedule()` function tries to look at all of the goroutines associated with a `p` (though it does look "globally" as well), and choose which to execute.
+The channel logic may `gopark` the current goroutine if it must block, which will eventually change the goroutine state (away from "running"), add the goroutine to a `sudog` -- a block/wakeup tracking datastructure, and call `schedule()` to choose another goroutine to run.

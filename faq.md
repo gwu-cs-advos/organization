@@ -430,3 +430,86 @@ The intuition is strong: if we can't find a goroutine to execute, then we have t
 
 Generally, the `schedule()` function tries to look at all of the goroutines associated with a `p` (though it does look "globally" as well), and choose which to execute.
 The channel logic may `gopark` the current goroutine if it must block, which will eventually change the goroutine state (away from "running"), add the goroutine to a `sudog` -- a block/wakeup tracking datastructure, and call `schedule()` to choose another goroutine to run.
+
+> I didn't see a preemptive scheduler. Isn't this an issue?
+
+`go` leverages OS threads that are preemptive at the OS level, but uses cooperative scheduling by default between goroutines with some facilities for preemption through timer signals.
+So preemptions happen, but they happen within the OS kernel, not in the `go` runtime.
+You might think about it this way: `go` creates multiple OS threads (`m`), which are preemptive, so the `go` runtime must assume that a preeemption can happen *at any time*!
+Go relies on timer events (I believe delivered with signals) to provide the equivalent of timer interrupts for the system.
+The `schedule()` function will choose which goroutine to execute at any point.
+Note that one of `go`'s goals is to ensure that there is only a single OS thread running for each core on the system, which will decrease the chance of preeemptions *within the go runtime*.
+It can't do this perfect because it doesn't control when OS threads are blocked (e.g. on a demand-paging load/store) or when they wakeup (e.g. from a blocking system call).
+
+> How does `go` avoid the additional overheads of context switching?
+
+`go` attempts to avoid OS thread context switching costs by trying to have a single OS thread on each core, and instead manage the context switches between goroutines within the user-level runtime.
+The core idea is to use M:N threading, emphasizing the hopefully lower costs of scheduling and switching between goroutines.
+
+> What does `go` look like from the OS's perspective?
+
+Like a normal multi-threaded process.
+Nothing special.
+So the OS simply schedules its own OS threads, and execute system calls as normal.
+The `go` runtime tries to use the normal OS abstractions to provide this M:N threading model on top.
+
+> Why are there both global and local runqueues?
+
+The local runqueue is for a specific processor (`p`).
+When you call `schedule()`, you're doing so in a specific goroutine, that is associated with a specific `p`.
+So that will use the local runqueue for that `p` by default.
+The global runqueue is a single runqueue for the entire runtime.
+A goroutine is only in a single one of these runqueues at any point (or is executing).
+By default when we switch to another goroutine, we'll keep the previous goroutine in the local runqueue (unless it is blocking).
+This will maintain some locality of reference: maybe the next time we run that goroutine, some of its data is still in that processor's cache, making it faster.
+When a goroutine executes a blocking system call, when it wakes up it will likely be placed into the global runqueue so that it will later be "moved" into a local runqueue and executed in a `p`.
+
+> What if we choose the number of `p` (`GOMAXPROCS`) to be larger than the number of cores on the system?
+
+This will lead to one or more cores on the system to run *multiple OS threads* within a single `go` runtime.
+Thus, `go` will no longer have some power to control which goroutine is actually running on a core at a time, and will suffer the preemption costs of multiple OS threads.
+Put another way: `go` tries hard to make sure that there is at most a single OS thread running per core in the `go` runtime so that *it can control concurrency and scheduling*.
+This proposal would break its ability to do so.
+
+> Why is there a null pointer dereference at the end of `main`?
+
+The preceding `exit` shouldn't return.
+If it does because of some bug somewhere, it would be really nice to catch the bug, and this is one way to do so.
+It might be that they didn't want to trust the printing or tracing machinery if a bug already happened, so a simple segmentation fault can be a trustworthy way to report an error.
+Alternatively, it might be the case that they are trying to make the `go` compiler understand that this code should not be executed.
+This would depend on assumptions within the compiler that I don't understand, so this might not be a motivation.
+
+> What does the work stealing actually do?
+
+Work stealing is a general workload management technique mean to solve the problem of workload imbalances.
+What if there are many goroutines running on a single `p`, and none on the other?
+We have to "rebalance" the goroutines (the work) between `p`s.
+Work stealing is a historically powerful approach in which a core (`p`), when it doesn't have work to do, can "steal" work from another `p`.
+There are proofs that stealing from a *random* other `p` is optimal, which is what `go` does!
+
+> What are the drawbacks and benefits of M:N threading?
+
+These systems attempt to be able to switch between threads solely at user-level.
+Thus thread coordination (e.g. via channels) can be much faster, in theory.
+However, they have a lot of complexity in trying to manage the number `N` of OS threads used in the system as different OS threads (running user-level threads, or goroutines) block and wakeup.
+If you are frequently changing between OS threads (because of blocking or other kernel coordination), then you're paying the price of that kernel overhead *and* the user-level overhead for the user-level scheduling (that we saw in the code this week).
+
+> What is the advantage of using channels over more conventional coordination (e.g. monitors in Java)?
+
+There's a lot of literature written on this, and a lot of strong opinions.
+One argument is that when you're using channels, you are avoiding shared data-structures.
+Using locks to protect data-structures is really hard and can cause bad performance problems, or deadlock.
+Channels are another way to design parallel systems.
+It might also be argued that in network-facing systems (that are `go`'s core purpose), channels better capture request processing than locked data-structures.
+There are also trade-offs between thread-based or event-based concurrency control systems that are related to this, but beyond what I want to get into here.
+
+> Why are channels more efficient than alternatives?
+> If a goroutine wants to send data into a full channel it will block, or if a goroutine receives data in an empty channel, the same.
+> Don't we pay the cost of blocking either way?
+
+Recall that all of this logic is in user-level, including the `go` runtime.
+So even if a goroutine blocks, it doesn't need to call into the kernel.
+Instead, the `go` runtime can simply switch to another goroutine directly!
+Because we aren't calling into the kernel, we can likely have less overhead, even in the blocking cases, compared to kernel operations.
+However, there are *many* cases where channels will not require blocking (e.g. receiving from a channel with data in it), and these are pretty common cases.
+In those cases, we're again avoiding any system calls, and quickly interacting with the channel

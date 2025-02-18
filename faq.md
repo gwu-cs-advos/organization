@@ -513,3 +513,59 @@ Instead, the `go` runtime can simply switch to another goroutine directly!
 Because we aren't calling into the kernel, we can likely have less overhead, even in the blocking cases, compared to kernel operations.
 However, there are *many* cases where channels will not require blocking (e.g. receiving from a channel with data in it), and these are pretty common cases.
 In those cases, we're again avoiding any system calls, and quickly interacting with the channel
+
+## `libuv`
+
+> What happens if a handler queue runs out of space
+
+Usually these are vectors, thus dynamically expanded, or any handlers that overflow.
+In some cases, runtimes will use a linked list representation to hold "overflow".
+
+> Are flags a good way to pass information about the types of different options?
+
+`flags` in C (and C++) are usually used as efficient *sets*.
+They are a single word, thus don't require dynamic memory allocation, and operations such as checking membership and adding to the set are simple bit operations (`|` and `&`).
+`enum`s or `#define` constants assign a name to a separate bit so that set operations are easier to read.
+The downside is that you cannot support more items in the set than you have bits.
+I'd imagine that here they are useful as they avoid memory allocation.
+
+> Do event-based systems handle high loads well?
+
+Yes, they are designed for this case.
+In a thread-based system to handle concurrency, you might have thousands of threads to handle the different connections, and the memory and CPU overhead for this might overwhelm the system.
+Instead, each "client" is encoded in an event that is passed through functions as it is processed.
+The inner loop of an event-based system uses `epoll` to multiplex the events.
+
+The downside of event-driven systems is that they make very hard to understand code.
+It is said that they "rip the stack" apart as what would normally be a sequence of function calls in a single sequential segment of code turns into code split across functions, with state serialized into events.
+
+Some programming languages (C#, javascript, and Rust) provide `async` and `await` keywords and promises that enable the *language* to define the event handlers and event data transparently.
+This tries to be "the best of both worlds" -- you get to write thread-like code that is easy to read and the events are created by the language -- but has software engineering issues.
+
+> Why does `libuv` abstract the event multiplexing mechanism (including `kqueue`, `IOCP`, etc...) instead of always using `uio_ring` on Linux?
+
+`uio_ring` is not supported on older Linux kernels, and is not supported on other OSes!
+`kqueue` is a BSD mechanism, and `IOCP` is Window's mechanism.
+
+> Where is the `backend_fd`? I don't see it in the `uv_loop_t` structure?
+
+It is pulled in with `UV_LOOP_PRIVATE_FIELDS` (in `include/uv/unix.h`).
+This is a way for `libuv` to provide easy access to the publicly accessible fields (as part of the API to clients), and to "hide" the private fields that should only be accessed by the internals of `libuv`.
+C doesn't provide visibility modifiers to `struct`s so, this is a hackey way to convey to the user the intent of the fields.
+
+> What's the diference between `poll` and `epoll`?
+
+There are many differences, a couple of the big ones:
+1. `poll` is level-triggered, so will return all file descriptors that are readable/writable when called, whereas `epoll` is event-triggered so will only tell you which file descriptors have *become* readable/writeable since the last time `epoll` was called.
+   As such, `poll` is slightly easier to use (processes can track less state).
+2. `poll` takes $N$ arguments (for $N$ file-descriptors) that can lead to a lot of copying between user and kernel, while `epoll` (and `epoll_cntl`) always pass $1$ file descriptor of interest to and from the kernel, so `epoll` scales *much better* than `poll`.
+   `epoll` is used in domains that care about performance (most of them).
+
+> Does event-driven programming require fewer locks?
+> I don't see any in the library?
+
+Instead of using threads to manage concurrency, event-driven systems use events.
+This is a much more *explicit* way for the system to track and control concurrency.
+As you don't require multiple threads, you don't require locks!
+**However**, If you want to use multiple cores, you will still require locks to coordinate between the cores.
+Each of the `loop` constructs enable clients of `libuv` to manage multipl event loops, for example, one per core.

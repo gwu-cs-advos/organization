@@ -119,6 +119,14 @@ static void read_cb(uv_fs_t* req) {
 
 ---
 
+## Managing Concurrency
+
+1. Use non-blocking system calls,
+2. Use event loops with kernel notification of file-descriptors with activity through `epoll`,
+3. A thread pool to handle system calls that cannot be non-blocking (e.g. `open`).
+
+---
+
 # Demikernel
 
 ---

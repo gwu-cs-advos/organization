@@ -569,3 +569,51 @@ This is a much more *explicit* way for the system to track and control concurren
 As you don't require multiple threads, you don't require locks!
 **However**, If you want to use multiple cores, you will still require locks to coordinate between the cores.
 Each of the `loop` constructs enable clients of `libuv` to manage multipl event loops, for example, one per core.
+
+> There are a lot of assertions.
+> Aren't those dangerous in production code?
+> Where should they be used?
+
+First, `assert`ions should be used wherever there are assumptions that are easily checkable in your code.
+They are there to encode the assumptions of your code.
+
+`assert`ions in C can often be enabled/disabled with a `#define` variable.
+For example, to disable assertions:
+
+```c
+#define NDEBUG
+#include <assert.h>
+```
+
+However, if an `assert` is in your code, it is likely ensuring that some assumption is valid.
+If you compile out your assertions, or if you remove them, then your code will execute *while not in a state consistent with your assumptions*.
+To put it another way, it is almost always better to *fail as soon as you detect an issue*, than to continue and cause unpredictable behaviors that will be hard to track back to the root cause.
+While it feels bad to aggressively make your program fail, it is always better to fail immediately when you detect an assumption violation.
+
+> What are the performance trade-offs in switching from I/O bound to CPU bound?
+
+CPU-bound computations will likely execute FIFO without delay.
+Systems only switch between events when one blocks (passing in a callback).
+As event-based systems are *not* preemptive, CPU-bound applications can delay the processing of all other events.
+
+> What do they use the thread-pool for?
+
+For system calls that can block, they are "farmed out" to a thread-pool.
+This represents a semantic gap between what the event-handling library wants (no blocking), and the APIs provided (that can't avoid blocking).
+This leads to complexity in the library as it must avoid blocking the main thread using the thread pool, which also has the side-effect of causing a lot of inter-thread coordination overheads.
+
+> How can javascript use functions written in C?
+
+Javascript is either interpreted by an interpreter written in C, or compiled into code that can call into C code, including `libuv`.
+Almost any language can interoperate with C, and most are written with/in C/C++.
+
+> If you want to handle multiple parallel event loops, don't you need locks?
+
+Yes!
+Event loops can avoid threading, but only when running on a single core.
+Of course, if you want to take advantage of multiple cores, those threads (one per core) need to synchronize if accessing shared data.
+
+> Is `libuv` specifically improving javascript, or compensating for shortfalls in libc?
+
+Event-based programming (e.g. `libuv`) is generally useful for systems that want scalable, efficient execution.
+`nginx` has almost 50% of the web-server marketshare, and it is an event-driven system.

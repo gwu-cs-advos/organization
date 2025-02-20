@@ -951,12 +951,13 @@ Trust requirements through shared resources:
 
 Checks required on resource access if
 - shared resource namespace
-- some clients should not have access to all resources
-$\to$ checks in server to figure out who has access to what resources
+- clients only allowed access a subset of resources
+
+$\to$ Server checks on who can access which resource
 
 Called: Ambient authority
 - A constant security problem
-- Attacks on the resolution function that can be very complex
+- Attacks on complex resolution functions
 
 Example: Filesystem!!!
 

@@ -617,3 +617,76 @@ Of course, if you want to take advantage of multiple cores, those threads (one p
 
 Event-based programming (e.g. `libuv`) is generally useful for systems that want scalable, efficient execution.
 `nginx` has almost 50% of the web-server marketshare, and it is an event-driven system.
+
+## Demikernel
+
+> What should Demikernel not be used for?
+
+It requires devoting a core (or multiple cores) completely to the target application.
+All concurrency management is done via polling!
+So if you have a service that spends a minority of its time actually handling requests, it will burn a lot of CPU unproductively polling.
+Also, if you have limited hardware, and can't devote core(s) to this computation, then the Demikernel isn't for you.
+So it is particularly bad at multi-tenant environment, but very good at specialized environments that want to make one application go zoom.
+
+> Where is all of the DMA happening in the code?
+
+It is happening in DPDK, which is an external library.
+Demikernel simply leverages that library for its I/O, and is an abstraction level that hides the DPDK details.
+
+> It is very strange that while it has "threads", it doesn't have a thread queue or any such structure.
+
+Yes, while coroutines are supported, we don't see a scheduler in the conventional sense.
+The application manages much of its own concurrency.
+A thread, as such, is really an abstraction for the continuous processing of items inserted into a queue more than anything else.
+
+> What happens if a user accidentally frees or modifies the buffer passed into dmtr_push before the asynchronous I/O completes?
+
+Don't do that!
+You might corrupt the data before it is sent via DMA.
+Worse, you might modify the data *as* it is being sent via DMA!
+So the data transferred might be half old and half new.
+If you `free` it, then it might both be used to transfer via DMA, *and* reallocated as something else.
+No good comes from these options :clown_face:.
+This falls into the class of normal C/C++ errors where you simply shouldn't access data after you've essentially transferred ownership of it over to an API.
+
+> Wait, the act of waiting is just spinning?
+> What if you want to do something in the meantime!?
+
+When you call `wait`, you're effectively polling foreever more.
+If you don't want to do that, and just want to check if data's available on a specific queue, you have `dmtr_poll`:
+
+```c++
+int dmtr_poll(dmtr_qresult_t *qr_out, dmtr_qtoken_t qt)
+{
+    DMTR_NOTNULL(EINVAL, ioq_api.get());
+
+    return ioq_api->poll(qr_out, qt);
+}
+```
+
+If data isn't available, go do something else and come back to it!
+
+> How does the Demikernel abstract the device accesses?
+
+Demikernel should work for a number of "backends".
+They each implement the [`io_queue_api`](https://github.com/gwu-cs-advos/demikernel/blob/d0fb4dc8c26c768502499876fa6b1a67902ca261/include/dmtr/libos/io_queue_api.hh), and are called via [wrapper functions](https://github.com/gwu-cs-advos/demikernel/blob/d0fb4dc8c26c768502499876fa6b1a67902ca261/src/c%2B%2B/libos/lwip/lwip_libos.cc#L15C30-L15C42).
+For example, for the [lwip](https://github.com/gwu-cs-advos/demikernel/blob/d0fb4dc8c26c768502499876fa6b1a67902ca261/src/c%2B%2B/libos/lwip/lwip_libos.cc#L15C30-L15C42) backend.
+
+> How does the Demikernel handle failures?
+
+It does not.
+No part of the Demikernel attempts to provide memory isolation in the code-base we looked at.
+It is an API that abstracts I/O and concurrency, but does not attempt to provide isolation.
+The up-to-date version of the Demikernel is written in Rust, so is leveraging the type-safe properties of rust to attempt to avoid most issues.
+But `panic!`s and the like will still likely cause a bad day.
+It should go without saying: Demikernel does not have security as a design goal.
+
+> What is DPDK and RDMA?
+
+DPDK is the DataPlane Development Kit, and is a library that enables the direct, user-level access of networking devices.
+RDMA is "remote DMA" which enables the DMA to and from memory on other, remote systems.
+
+> The use of queue descriptors feels close to `go` channels.
+
+Absolutely!
+Both systems are built around the communication mechanism being a core abstraction.

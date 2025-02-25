@@ -232,7 +232,7 @@ Demikernel documentation that might be helpful:
 Questions:
 
 1. What APIs does the DK use to issue requests to send or receive data, and get notified when there is an event?
-	What APIs does can a client use to "block" awaiting events?
+	What APIs does a client use to "block" awaiting events?
 2. DK does not *actually* block (despite having APIs labeled as blocking).
 	I define blocking as "being removed from the scheduler runqueue to allow other threads to execute".
 	Provide evidence of this in the code.

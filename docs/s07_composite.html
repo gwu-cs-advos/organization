@@ -59,7 +59,7 @@
   - Interfaces & polymorphism <!-- .element: class="fragment" data-fragment-index="2" -->
   - DAG of components <!-- .element: class="fragment" data-fragment-index="2" -->
 - Extreme efficiency
-  - DAG of components w/ minimal logic to provide components <!-- .element: class="fragment" data-fragment-index="3" -->
+  - DAG of components w/ minimally restrictive logic to provide the component abstraction <!-- .element: class="fragment" data-fragment-index="3" -->
 
 ---
 
@@ -304,6 +304,23 @@ Design space:
 - Access rights associated with fd - at least RW
 - *But* no facilities for *sharing*
 
+
+---
+
+## Capability-based Access Control
+
+- *Local namespace* - each component associated with a *capability-table*.
+- *No ambient authority* - can only access resources referenced in captbl w/ specified allowed operations
+- *Simple logical lookup* - `component->captbl[cap]`
+  - single syscall: perform operation `op` on `cap`'s resource
+
+```c
+if (cap_oob(component->captbl, cap)) return -1;
+c = &component->captbl[cap];
+if (!cap_operation_allowed(op, c->perms)) return -1;
+return op(c->resource);
+```
+
 ---
 
 ## Capability-Table Access to Resources
@@ -334,22 +351,6 @@ block-beta
 	c5 --> c7
 	c6 --> c9
 	c5 --> c8
-```
-
----
-
-## Capability-based Access Control
-
-- *Local namespace* - each component associated with a *capability-table*.
-- *No ambient authority* - can only access resources referenced in captbl w/ specified allowed operations
-- *Simple logical lookup* - `component->captbl[cap]`
-  - single syscall: perform operation `op` on `cap`'s resource
-
-```c
-if (cap_oob(component->captbl, cap)) return -1;
-c = &component->captbl[cap];
-if (!cap_operation_allowed(op, c->perms)) return -1;
-return op(c->resource);
 ```
 
 ---

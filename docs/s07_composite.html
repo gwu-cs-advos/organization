@@ -1,0 +1,1155 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+
+        
+
+        <link rel="stylesheet" href="assets/reveal-js/dist/reveal.css" />
+
+        
+            <link rel="stylesheet" href="assets/theme.css" />
+        
+        
+            <link rel="stylesheet" href="assets/nord.css" />
+        
+
+        
+            
+        
+    </head>
+    <body>
+        <div class="reveal">
+            <div class="slides">
+                <section data-markdown
+                
+                    data-separator-vertical="^\s*-v-\s*$"
+                
+                    data-separator-notes="^Notes?:"
+                
+                >
+                    <textarea data-template>
+                        # Composite
+
+<div class="center">
+
+**Gabe Parmer**
+
+© Gabe Parmer, 2025, All rights reserved
+
+</div>
+
+---
+
+## System Design Goals
+
+- Strong security/safety
+	- Pervasive isolation <!-- .element: class="fragment" data-fragment-index="2" -->
+- Customized abstractions and policies
+	- Extensible components <!-- .element: class="fragment" data-fragment-index="3" -->
+- Efficiency at all costs
+	- Extensibility "down low to the ground" <!-- .element: class="fragment" data-fragment-index="4" -->
+
+---
+
+## System Component Design
+
+- Custom abstractions and policies for applications
+  - Interfaces & polymorphism <!-- .element: class="fragment" data-fragment-index="2" -->
+  - DAG of components <!-- .element: class="fragment" data-fragment-index="2" -->
+- Extreme efficiency
+  - DAG of components w/ minimal logic to provide components <!-- .element: class="fragment" data-fragment-index="3" -->
+
+---
+
+## System Isolation
+
+- Partitioned namespaces by default
+- *Vertical isolation* via component separation
+  - interfaces
+  - page-tables
+  - IPC
+- *Horizontal isolation* via component resource multiplexing
+  - component definition of resource namespaces, binding, and resolution
+
+---
+
+<div class="multicolumn">
+<div>
+
+## Components
+
+- *Interface(s)*
+- *Implementation*
+- *Dependencies* on other Interfaces
+
+</div><div>
+
+```mermaid
+flowchart TB
+
+A[\"Interface A"/]
+B[\"Interface B"/]
+C[\"Interface C"/]
+D[/"Interface D"\]
+E[/"Interface E"\]
+F(["<br>Component<br>Implementation<br><br>"])
+
+A -.-> F
+B -.-> F
+C -.-> F
+F -.-> D
+F -.-> E
+```
+
+</div></div>
+
+---
+
+## Component Dependencies
+
+<div class="center">
+
+```mermaid
+flowchart TB
+
+A[\"Interface A"/]
+D[/"Interface D"\]
+F(["<br>Component 0<br>Implementation<br><br>"])
+E[\"Interface D"/]
+G(["<br>Component 1<br>Implementation<br><br>"])
+
+H(["<br>Component 0<br>Implementation<br><br>"])
+I(["<br>Component 1<br>Implementation<br><br>"])
+
+
+A -.-> F
+F -.-> D
+D --> E
+E -.-> G
+
+H --> I
+```
+
+</div>
+
+---
+
+## Separation of Components and "Core OS"
+
+Core OS defines the component execution model
+- How do they get memory?
+- How can they manage thread interleaving?
+- How are they isolated?
+- How do they communicate via interfaces?
+
+Hopefully the components define the rest!
+- But what abstractions and policies are they *unable* to define because a semantic gap from the Core OS?
+
+---
+
+## Challenge
+
+We want both...
+
+- Strong Core OS mechanisms for enforcing isolation, and...
+- Components to define isolation policies.
+
+Is this possible?
+
+---
+
+## Challenge: Core OS Design
+
+OS abstractions should...
+- be a lightweight abstraction over hardware
+- enable component-definition of higher-level policies
+- enable vertical & horizontal isolation
+
+---
+
+## Challenge: Core OS Design
+
+Hardware mechanisms
+
+| HW | Description |
+|---|---|
+| *core* | sequential flow of execution via register and memory manipulation|
+|*interrupt* | asynchronous, non-deterministic (WRT the core) execution|
+| *disable int* | explicitly disable/enable interrupts for synchronization |
+|*dual-mode + syscalls* | vertical isolation separating kernel memory/instructions|
+| *page-tables*| radix-trie mapping from *va $\to$ pa*|
+|*exceptions*| kernel reaction to undefined execution conditions |
+
+Core OS abstractions: ???
+
+---
+
+## Aside: $\mu$-Kernel Goal
+
+> a concept is tolerated inside the $\mu$-kernel only if moving it outside the kernel, i.e. permitting competing implementations, would prevent the implementation of the system’s required functionality.
+
+- $\mu$-kernel: defines the Core OS functionality
+- User-level components define most concepts (i.e. abstractions)
+
+---
+
+# Thought experiment 1️⃣: What are the system resources?
+
+---
+
+## Core OS Abstractions
+
+Abstractions
+- Threads - abstract *core* & *interrupt*
+- Components - abstract *page-tables*
+- IPC to entry point - abstract *system-call*/*exception*
+
+
+
+---
+
+# Thought experiment 2️⃣: What system (not component) interfaces are required?
+
+---
+
+## Core OS Outline
+
+- **How do we *name* resources?**
+- How can we manage *kernel memory* and use it as component resources?
+- How can implement *policy to "split up" memory* across components?
+- How can we *share* access to kernel resources?
+- How can we *coordinate between components*?
+- How do we define *scheduling policy*?
+
+---
+
+# Resource Naming
+
+---
+
+## Resource Naming Challenges
+
+Core OS needs to define resolution function:
+
+<div class="center">
+
+$resolve(name) \to resource$
+
+</div>
+
+UNIX:
+- paths?
+- pids/uids/ip:port?
+- fds?
+
+---
+
+## Resource Naming Challenges: Paths
+
+- **In-kernel data-structures**: <br>hash-tables + hierarchical resolution
+	<br>$\to$ small allocations, memory allocator, expensive (unbounded) kernel paths, fine-grained locking
+- **Control over namespace sharing/access**: <br>per-process, directory/mount-point lookups
+		<br>$\to$ challenges amplified by data-structure levels of indirection & ACLs
+- **Requires kernel access to user-level pointers**: exceptions on access
+	<br>$\to$ complex policy in page-faults
+
+---
+
+## Resource Naming Challenges: Paths
+
+Design space: kernel policy for
+- memory allocation
+- execution length based on data-structures & path properties (length, number of `/`, ...)
+- locking and parallelism
+- page-fault exceptions policies to handle unmapped pointer memory (kernel can fault on deref!)
+
+---
+
+## Resource Naming Goals
+
+<div class="center">
+
+**Ideal**: Avoid syscall string arguments
+
+</div>
+
+---
+
+## Resource Naming Challenges: pids, uids, ip:port
+
+Design space: kernel resources for
+- users, ACLs, ambient authority
+- network sockets, protocols, etc...
+- processes: fds, uids, cwd, ...
+
+---
+
+## Resource Naming Goals
+
+<div class="center">
+
+**Ideal**: Avoid abstract resources, instead abstract hardware
+
+</div>
+
+---
+
+## Resource Naming Challenges: fds
+
+Design space:
+- Local namespace - partitioned by default
+- Logical array lookup - bounded, fast lookup
+- Access rights associated with fd - at least RW
+- *But* no facilities for *sharing*
+
+---
+
+## Capability-Table Access to Resources
+
+```mermaid
+block-beta
+	columns 2
+	block:C1
+		c0["C"]
+	end
+	block:C2
+		c1["C"]
+	end
+	block:K:2
+		columns 3
+		c5(["ct0"])
+		space
+		c6(["ct1"])
+		space
+		space
+		space
+		c7(["r0"])
+		c8(["r1"])
+		c9(["r2"])
+	end
+	c0 --> c5
+	c1 --> c6
+	c5 --> c7
+	c6 --> c9
+	c5 --> c8
+```
+
+---
+
+## Capability-based Access Control
+
+- *Local namespace* - each component associated with a *capability-table*.
+- *No ambient authority* - can only access resources referenced in captbl w/ specified allowed operations
+- *Simple logical lookup* - `component->captbl[cap]`
+  - single syscall: perform operation `op` on `cap`'s resource
+
+```c
+if (cap_oob(component->captbl, cap)) return -1;
+c = &component->captbl[cap];
+if (!cap_operation_allowed(op, c->perms)) return -1;
+return op(c->resource);
+```
+
+---
+
+## Capability-table Lookup
+
+Logical lookup: `component->captbl[cap]`
+- unclear size of the captbl array
+- dynamic = kernel memory allocation
+- inspiration: page-tables <br>logical array, radix-trie, fixed size allocations
+
+---
+
+## Resource Naming
+
+Capabilities (fds) via capability tables
+
+Pending questions:
+- Bootstrapping?
+- Sharing/coordination?
+
+---
+
+# Resource Allocation & Management
+
+---
+
+## Core OS Outline
+
+- How do we *name* resources?
+- **How can we manage *kernel memory* and use it as component resources?**
+- How can implement *policy to "split up" memory* across components?
+- How can we *share* access to kernel resources?
+- How can we *coordinate between components*?
+- How do we define *scheduling policy*?
+
+---
+
+## Resource Allocation Problem
+
+How are **Core OS resources allocated** to components?
+
+Imagine, these require allocation:
+- Threads, Virtual pages, Page-table nodes
+
+How does an application **allocate** these?
+- What if another component needs to manage that resource?
+- What enables a "scheduler component" to have special access to threads?
+- What prevents a DoS where a component attempts to allocate everything?
+
+Notes:
+
+Recall that any answer to these questions should be implemented as policy in a component.
+
+---
+
+## Kernel Memory Management
+
+Potential API to allocate resources:
+
+```c
+int thread_alloc(fn, data, thdid_t *id);
+int page_alloc(vaddr_t *ret);
+int pgtbl_alloc(int level, pgtblnode_t *ret);
+```
+
+How does the kernel support this?
+
+---
+
+## Option 1️⃣: Kernel Allocator
+
+**Preallocation of resource types**: Compile-time decision about how many of *each* kernel resource
+- Popular in embedded systems
+- Must understand the application's requirements to partition memory
+
+---
+
+## Option 1️⃣: Kernel Allocator
+
+**Buddy/Slab allocator**: dynamic allocation of resource types behind high-level `_alloc` APIs
+- Kernel dynamically allocates resource from "pool" of memory
+  - *kernel* policy for splitting it up, concurrency management, and exhaustion
+- User-level cannot control physical memory placement
+  - DMA regions
+  - contiguous physical frames = "superpages"
+
+---
+
+## Option 2️⃣: Frame Retyping
+
+User-level explicitly addresses specific *frames* when "allocating" resources
+
+Kernel tracks and limits access to individual *frames* of memory.
+- Each frame has a tracked **type**, that determines how the memory can be used.
+- Example: `FRAME_TYPE_VM` means it can be used as virtual memory
+
+---
+
+## Frame Retyping API
+
+`int frame_retype_to(frame_t frame, enum frame_type type);`
+- "Allocate resource": Can convert frame from `FRAME_TYPE_UNTYPED` $\to$ `FRAME_TYPE_*`
+- "Deallocate resource": Can convert frame from `FRAME_TYPE_*` $\to$ `FRAME_TYPE_UNTYPED`
+  - If there are no references to the frame that treat it as that type
+
+API provided to user-level components!
+
+---
+
+## Capability Table $\to$ Frames
+
+```c []
+if (cap_oob(component->captbl, cap_arg)) return -1;
+struct capability *c = component->captbl[cap_arg];
+if (!cap_operation_allowed(op, c->perms)) return -1;
+
+frame_t f = c->resource;
+/* use frame_t in the frame APIs */
+switch (op) {
+	case RETYPE:
+		return frame_retype_to(f, frame_type_arg);
+		break;
+	/* ... */
+}
+```
+
+---
+
+## Using Typed Frames
+
+Once frame is a useful type can be used in corresponding APIs
+
+Example: can use
+```c
+int map_vm(frame_t frame, pgtbl_t pt, vaddr_t va, ...)
+```
+only if `FRAME_TYPE_VM`
+
+---
+
+## Frame Retyping
+
+Data-structures
+
+- Physical memory: <br> `struct frame frames[NFRAMES] PAGE_ALIGNED;`
+  - `struct frame { char mem[4096]; };`
+- Frame Type: <br> `enum frame_type frame_types[NFRAMES]`
+  - `enum frame_type { ... }`
+
+When a frame has a type, its memory can be treated as "of that type".
+
+> Where `#define PAGE_ALIGNED __attribute__((aligned(4096)))`
+
+---
+
+```c [1,2|4-8|10-23|25-27|36-52|54-72|80-90]
+/* namespace of frames */
+typedef int frame_t;
+
+/* frames are a page-size, i.e. 4096 bytes */
+struct frame {
+	char mem[4096];
+};
+struct frame frames[NFRAMES] PAGE_ALIGNED;
+
+enum frame_type {
+	FRAME_TYPE_UNTYPED,
+	FRAME_TYPE_THREAD,
+	FRAME_TYPE_VM,
+	/* ... */
+	FRAME_TYPE_MAX
+};
+/* Track each frame's type and number of references to it */
+struct frame_metadata {
+	enum frame_type type;
+	int refcnt;
+};
+
+struct frame_metadata frames_meta[NFRAMES]
+
+int
+frame_retype_to(frame_t frame, enum frame_type type)
+{
+	if (frame > NFRAMES || type >= FRAME_TYPE_MAX) return -1;
+
+	/*
+	 * We're ignoring concurrency/parallelism issues here.
+	 * Imagine this is all atomic.
+	 *
+	 * First, can we retype to a resource type?
+     */
+	if (type != FRAME_TYPE_UNTYPED &&
+		frames_meta[frame].type == FRAME_TYPE_UNTYPED) {
+
+	    frames_meta[frame] = (struct frame_metadata) {
+			.type = type,
+			.refcnt = 1
+		};
+
+		switch (type) {
+		case FRAME_TYPE_THREAD:
+			thread_initialize_with_frame(&frames[frame]);
+			break;
+		case FRAME_TYPE_VM:
+			vm_initialize_with_frame(&frames[frame]);
+		/* ... */
+		}
+	}
+	/* Deallocate a resource, and make retypeable in the future. */
+	else if (type == FRAME_TYPE_UNTYPED &&
+		     frames_meta[frame].type != FRAME_TYPE_UNTYPED) {
+		/*
+		 * Can't move to "untyped" if thre are any references
+		 * to the frame as the old type. This effectively prevents
+		 * dangling pointers.
+		 */
+		if (frames_meta[frame].refcnt != 0) return -1;
+
+		switch (frames_meta[frame]) {
+		case FRAME_TYPE_THREAD:
+			thread_deinitialize_frame(&frames[frame]);
+			break;
+		case FRAME_TYPE_VM:
+			vm_deinitialize_frame(&frames[frame]);
+		/* ... */
+		}
+		frames_meta[frame].type = type;
+	} else {
+		/* Cannot retype from non-UNTYPED to non-UNTYPED nor from untyped to untyped */
+		return -1;
+	}
+
+	return 0;
+}
+
+int
+map_vm(frame_t frame, pgtbl_t pgtbl, vaddr_t addr, ...)
+{
+	assert(frames_meta[frame].refcnt > 0);
+
+	if (frames_meta[frame].type != FRAME_TYPE_VM) return -1;
+
+	frames_meta[frame].refcnt++;
+
+	/* ... */
+}
+```
+
+---
+
+## Frame Retyping
+
+User management of kernel memory
+
+- frames are addressed directly
+- frames are retyped into kernel data-structures
+- all kernel data-structures are the size of a frame!
+- no kernel memory management!
+
+---
+
+## Core OS Outline
+
+- How do we *name* resources?
+- How can we manage *kernel memory* and use it as component resources?
+- **How can implement *policy to "split up" memory* across components?**
+- How can we *share* access to kernel resources?
+- How can we *coordinate between components*?
+- How do we define *scheduling policy*?
+
+---
+
+# Multiplexing Kernel Resources
+
+---
+
+## Option 1️⃣: Quotas
+
+Need to prevent DoS attacks $\to$ give each component a *quota*.
+
+Decouple
+- access to a set of resources from which...
+- allocation of resource
+
+Quota is an argument to the allocation functions
+```c []
+int thread_alloc(fn, data, thdid_t *id, quota_t q);
+```
+
+---
+
+## Option 1️⃣: Quotas
+
+Problems:
+- How are quotas managed?
+  A component needs the right to impose quotas on other components - a quota for quotas? <!-- .element: class="fragment" data-fragment-index="2" -->
+- How do you take back resources? <!-- .element: class="fragment" data-fragment-index="3" -->
+- Are quotas "hard" (i.e. guaranteed)?
+  How to predict the quota amounts?
+  Give too much, and you have underutilized resources. <!-- .element: class="fragment" data-fragment-index="4" -->
+
+---
+
+## Option 2️⃣: *Component Resource Mgmt* & Capability Delegation
+
+Let "manager" components
+1. have access to all resources
+2. pass those resources according to their policy to client components.
+
+Can implement quotas, dynamic policies, or anything in-between.
+
+---
+
+## Coordination Problem
+
+How are Core OS resources shared?
+
+Do we want share
+- Threads, Virtual pages, Page-table nodes
+
+Components might define abstractions to **manage** these...
+- But also want to let other components **leverage the resources**
+
+*Controlled* sharing is required
+
+---
+
+## Option 2️⃣: Component Resource Mgmt & *Capability Delegation*
+
+Necessary technology: enable manager component to pass resources via capability-tables.
+- Manager can choose to give, or not, resources to a client
+- Define its own policies for allocation and sharing
+
+But how do we share resources across captbls? <!-- .element: class="fragment" data-fragment-index="4" -->
+
+---
+
+## Capability Delegation
+
+<div class="multicolumn">
+<div>
+
+```mermaid
+block-beta
+	columns 2
+	block:C1
+		c0["C"]
+	end
+	block:C2
+		c1["C"]
+	end
+	block:K:2
+		columns 3
+		c5(["ct0"])
+		space
+		c6(["ct1"])
+		space
+		space
+		space
+		c7(["r0"])
+		c8(["r1"])
+		c9(["r2"])
+	end
+	c0 --> c5
+	c1 --> c6
+	c5 --> c7
+	c6 --> c9
+	c5 --> c8
+```
+
+</div><div>
+
+```mermaid
+block-beta
+	columns 2
+	block:C1
+		c0["C"]
+	end
+	block:C2
+		c1["C"]
+	end
+	block:K:2
+		columns 3
+		c5(["ct0"])
+		blockArrowId<["deleg"]>(right)
+		c6(["ct1"])
+		space
+		space
+		space
+		c7(["r0"])
+		c8(["r1"])
+		c9(["r2"])
+	end
+	c0 --> c5
+	c1 --> c6
+	c5 --> c7
+	c6 --> c9
+	c5 --> c8
+	c6 --> c8
+```
+
+</div></div>
+
+---
+
+## Delegation via IPC
+
+IPC:
+- Pass **data** between components
+- Pass **control** between components
+
+Delegation:
+- Pass **resources** via capabilities between components
+
+---
+
+## Analogy
+
+`init` has access to all resources
+- a `fd` at boot to each file, directory, ...
+
+All system access rights are
+- inherited via `fork` (i.e. copy captbl and rights), or
+- passed via Domain Sockets (without named sockets)
+
+---
+
+## Simple$^*$ Option for Delegation
+
+Treat capability-tables as resources
+- If a component has access to a capability table, <br>let the component copy capabilites into it
+d- New operation: `copy_cap`
+
+$^*$ simple to implement, conceptually challenging
+
+---
+
+```c [1,2|7-8|10-14|16|19-20|28-29|31-35|38]
+int
+captbl_syscall(cap_t cap_to_cli_captbl, cap_t cap_to_deleg, cap_t cap_in_cli_captbl, op_t op)
+{
+	struct component *comp = current_component();
+	struct capability *c_deleg, *c_cli_captbl;
+
+	if (cap_oob(comp->captbl, cap_to_cli_captbl) ||
+		cap_oob(comp->captbl, cap_to_deleg)) return -1;
+
+	c_cli_captbl = &comp->captbl[cap_to_cli_captbl];
+	c_deleg      = &comp->captbl[cap_to_deleg];
+	if (!cap_operation_allowed(op, c_cli_captbl->perms)) {
+		return -1;
+	}
+
+	struct captbl *cli_captbl = frame2captbl(c_cli_captbl->resource);
+	/* use frame_t in the frame APIs */
+	switch (op) {
+		case CAP_COPY:
+			return copy_cap(cli_captbl, cap_in_cli_captbl, c_deleg);
+			break;
+		/* ... */
+	}
+
+	return 0;
+}
+
+int
+copy_cap(struct captbl *cli_captbl, cap_t cap_in_cli_captbl, struct capability *c_deleg)
+{
+	struct capability *c_in_cli_captbl;
+
+	if (cap_oob(cli_captbl, cap_in_cli_captbl)) return -1;
+
+	c_in_cli_captbl = &cli_captbl[cap_in_cli_captbl];
+
+	/* Do the copy! */
+	*c_in_cli_captbl = *c_deleg;
+
+	/*
+	 * Should also update refcnts, etc...
+	 * Details omitted here.
+	 */
+
+	return 0;
+}
+```
+
+---
+
+## Manager Components Provide Horizontal Isolation
+
+Policies for horizontal isolation
+- defined by user-level components
+- can be defined
+
+---
+
+## Capability **Revocation**
+
+Also need to take back delegated resources
+- `free`/`munmap`/etc...
+- `exit`
+- segmentation fault
+
+---
+
+## Capability Revocation
+
+This is the *hard part*.
+- Requires Core OS tracking of a *tree of delegations*
+- Delegation = removing access to all caps in a subtree
+- Expensive, complicated
+
+Or, again, just provide a `rm_cap` operation
+- require a manager component to track delegations
+- perform the appropriate revocations
+
+---
+
+## Core OS Outline
+
+- How do we *name* resources?
+- How can we manage *kernel memory* and use it as component resources?
+- How can implement *policy to "split up" memory* across components?
+- **How can we *share* access to kernel resources?**
+- How can we *coordinate between components*?
+- How do we define *scheduling policy*?
+
+---
+
+# Sharing Resources
+
+---
+
+## Manager Components & Capability Delegation
+
+Manager component has access to captbls of clients
+- copy resource access into multiple clients
+- ... = sharing!
+
+---
+
+## Core OS Outline
+
+- How do we *name* resources?
+- How can we manage *kernel memory* and use it as component resources?
+- How can implement *policy to "split up" memory* across components?
+- How can we *share* access to kernel resources?
+- **How can we *coordinate between components*?**
+- How do we define *scheduling policy*?
+
+---
+
+# Inter-Component Coordination
+
+---
+
+## "IPC" by Another Name
+
+How can we establish *vertical isolation* through client/server requests?
+- Separate memory for client and server
+- Authentication of client to server
+- Pass arguments to server
+- Emulate "function-call" control flow
+  - client: `ret = fn(arg);`
+  - server: `int fn(int arg) { return arg + 1; }`
+
+---
+
+## Use Pipes?
+
+Pipes:
+- In-kernel buffer to store data (2xcopy)
+- Asynchronous threads
+  - 2x scheduler decisions + context switch
+- Client syscalls:
+  - `write` + `read`
+- Server syscalls:
+  - `read` + `write`
+
+---
+
+## Pipes Challenges
+
+- Kernel resource (buffer) allocation
+  - copying into & out of buffer (2000 cycles per 4096 bytes)
+- 4 syscalls (~1600 cycles)
+- 2x Switch page-tables (~400 cycles)
+- Scheduler in user-level component?
+  - 1 IPC = 3 IPC (switch to scheduler for each context switch)
+
+Pipes in Linux:
+- ~5000 cycles = 2.5$\mu$-second overhead
+- Prohibitive levels of overhead for many systems
+
+---
+
+## First Principles: Operations
+
+Syscalls:
+- client `call` syscall
+- server execute + return inverse of a system call
+2x syscalls
+
+Data passed in registers:
+- up to 128B...more? Use shared memory.
+
+Access control:
+- Capability table - capability to "synchronously invoke" server function
+
+---
+
+## No Thread Switch!
+
+Does *not* require switching threads!
+- Analogy: we don't switch threads on a system call to the kernel!
+
+---
+
+## How Can we Implement This?
+
+1. Track a Component "invocation stack" in the kernel
+   - conceptually similar to the C function call stack
+   - invoke a function in a component: push onto stack
+   - return from a function call in a component: pop off stack
+2. Synchronous invocation capability
+   - identifies server to invoke
+   - instruction pointer to start execution at
+   - token to pass to the server for authentication
+
+---
+
+```c [1-2|11|4,13-14|16-32|34-47]
+int
+captbl_syscall(cap_t cap, long arg0, long arg1, ..., long ip, long sp)
+{
+	struct thread *thd = current_thread();
+	struct component *comp = current_component();
+	struct capability *c;
+	int stktop;
+
+	if (cap_oob(comp->captbl, cap)) return -1;
+
+	c = &comp->captbl[cap];
+
+	stktop = thd->invstk_top
+	assert(thd->invstk[stktop].comp == comp);
+
+	if (c->type == SYNC_INV) {
+		/*
+		 * Save the current component/thread's information onto
+		 * the invocation stack so that we can later restore it.
+		 * Here, save the instruction/stack pointer of the current
+		 * component
+		 */
+		thd->invstk[stktop].ip = ip;
+		thd->invstk[stktop].sp = sp;
+		stktop++;
+
+		/* server component not on top of the stack! */
+		thd->invstk[stktop].comp = c->comp;
+		thd->invstk_top = stktop;
+
+		pgtbl_update(comp);
+		upcall_to_server(c->comp, c->ip, c->token, arg0, arg1, ...);
+		/* never returns! */
+	} else if (c->type == SYNC_RETURN) {
+		/*
+		 * "return" back to the calling component by popping
+		 * an entry off the thread's invocation stack.
+		 */
+		stktop--;
+		ip = thd->invstk[stktop].ip;
+		sp = thd->invstk[stktop].sp;
+		comp = thd->invstk[stktop].comp;
+
+		pgtbl_update(comp);
+		upcall_back_to_client(comp, ip, sp, arg0, arg1, ...);
+		/* never returns */
+	}
+
+	return 0;
+}
+```
+
+---
+
+## Simple Cross-Component Function Calls
+
+Maintain vertical isolation
+- *Isolation*: separate page-tables/protection domains
+- *Authentication*: token passed up to server
+- *CFI*: only execute at capability-protected instruction pointers
+- *Efficiency*: ~850 cycles (vs. 5000 for pipes)
+
+---
+
+## ...for Horizontal Isolation
+
+Client: `sbrk(4096)`
+- triggers `capability_syscall(sbrk_capnum)`
+- kernel synchronous invocation path
+
+...
+
+---
+
+## ...for Horizontal Isolation
+
+...
+
+Server: `sbrk(4096)` called
+- `client_id_t = get_token()`
+- Access data-structures to track where client's capability-tables are
+- use `copy_cap` to make a page-accessible in client's page-table
+- return from call
+
+...
+
+---
+
+## ...for Horizontal Isolation
+
+...
+
+Client:
+- return from call to `sbrk`
+- has access to memory!
+
+---
+
+## Thread Execution & Scheduling Problem
+
+Where do threads execute?
+
+1️⃣ Only in a single component.
+- Q: How do component's coordinate?
+  Inter-thread coordination. <!-- .element: class="fragment" data-fragment-index="2" -->
+- A: Inter-thread coordination $\to$ scheduling decision on IPC.
+  Component-defined scheduling policy? <!-- .element: class="fragment" data-fragment-index="3" -->
+
+---
+
+## Thread Execution & Scheduling Problem
+
+Where do threads execute?
+
+2️⃣ *Across* components (e.g. syscall).
+- Q: How do component's coordinate?  <!-- .element: class="fragment" data-fragment-index="2" -->
+- A: Thread executes across components during IPC.
+  How do we track where a thread is executing?
+  How do we know where to start executing in a component. <!-- .element: class="fragment" data-fragment-index="3" -->
+                    </textarea>
+                </section>
+            </div>
+        </div>
+        <script src="assets/reveal-js/dist/reveal.js"></script>
+        <script src="assets/reveal-js/plugin/markdown/markdown.js"></script>
+        <script src="assets/reveal-js/plugin/highlight/highlight.js"></script>
+        <script src="assets/reveal-js/plugin/zoom/zoom.js"></script>
+        <script src="assets/reveal-js/plugin/notes/notes.js"></script>
+        <script src="assets/reveal-js/plugin/math/math.js"></script>
+
+        
+            
+                
+                    
+                        <script src="https://cdn.jsdelivr.net/npm/reveal.js-mermaid-plugin/plugin/mermaid/mermaid.min.js"></script>
+                    
+                
+            
+        
+
+        <script>
+            Reveal.initialize({
+                
+                    
+                        history: true,
+                    
+                        slideNumber: "c/t",
+                    
+                        transition: "fade",
+                    
+                
+                plugins: [
+                    RevealMarkdown,
+                    RevealHighlight,
+                    RevealZoom,
+                    RevealNotes,
+                    RevealMath,
+
+                    
+                        
+                            
+                                RevealMermaid,
+                            
+                        
+                    
+                ],
+            });
+        </script>
+    </body>
+</html>

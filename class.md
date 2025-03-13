@@ -54,13 +54,13 @@ Please fill out the required form for deadlines by noon on the day of the deadli
 | R2.20 | isolation                    |                                                                                                        |
 | T2.25 | composite design             | [demikernel](https://github.com/gwu-cs-advos/organization/blob/main/class.md#7-demikernel)             |
 | R2.27 | isolation                    |                                                                                                        |
-| T3.04 | composite runtime            | [composite kernel](https://github.com/gwu-cs-advos/organization/blob/main/class.md#8-composite-kernel) |
+| T3.04 | composite runtime            |  													|
 | R3.06 | interface design             | [UNIX Service](https://github.com/gwu-cs-advos/organization/blob/main/class.md#1-unix-service)         |
 | T3.11 | Spring recess                |                                                                                                        |
 | R3.13 | Spring recess                |                                                                                                        |
-| T3.18 | composite scheduling         | [composite crt](https://github.com/gwu-cs-advos/organization/blob/main/class.md#9-composite-crt)       |
+| T3.18 | composite scheduling         | [composite kernel](https://github.com/gwu-cs-advos/organization/blob/main/class.md#9-composite-kernel) |
 | R3.20 | specialization               |                                                                                                        |
-| T3.25 | unikraft                     | [composite slm](https://github.com/gwu-cs-advos/organization/blob/main/class.md#10-composite-slm)      |
+| T3.25 | unikraft                     | [composite libs](https://github.com/gwu-cs-advos/organization/blob/main/class.md#10-composite-libs)    |
 | R3.27 | interface & component design |                                                                                                        |
 | T4.01 | nova                         | [unikraft](https://github.com/gwu-cs-advos/organization/blob/main/class.md#11-unikraft)                |
 | R4.03 | interface & component design |                                                                                                        |
@@ -242,9 +242,31 @@ For discussion in class:
 - In what ways are demikernel's design very specialized to its goals?
 - What problem domains do you think are a good fit for the demikernel?
 
-## 8: composite kernel
-## 9: composite crt
-## 10: composite slm
+## 9: composite kernel
+
+The Composite kernel has a number of kernel resources,
+- [Threads](https://github.com/gwsystems/composite/blob/v4/src/kernel/include/thread.h#L97-L120)
+- [Page-table nodes](https://github.com/gwsystems/composite/blob/v4/src/kernel/include/chal_pgtbl.h#L11-L18)
+- [Capability-table nodes](https://github.com/gwsystems/composite/blob/v4/src/kernel/include/captbl.h#L10-L19)
+- [Components](https://github.com/gwsystems/composite/blob/v4/src/kernel/include/component.h#L6-L13)
+- And a few others related to scheduling and virtualization.
+
+The source is organized as such:
+- The different [resources](https://github.com/gwsystems/composite/blob/v4/src/components/lib/cos/cos_consts.h#L109-L129).
+- The pages use the **retyping system** to be typed into the various [resources](https://github.com/gwsystems/composite/blob/v4/src/kernel/resources.c) of the kernel.- The different [capability types](https://github.com/gwsystems/composite/blob/v4/src/components/lib/cos/cos_consts.h#L14-L35).
+- The [*operations*](https://github.com/gwsystems/composite/blob/v4/src/components/lib/cos/cos_consts.h#L53-L79) that can be performed on capabilities that reference (name) those resources. These have logic that is generally defined in [cos.c](https://github.com/gwsystems/composite/blob/v4/src/kernel/cos.c). These include
+  - Creating a [capability slot](https://github.com/gwsystems/composite/blob/v4/src/kernel/cos.c#L438-L459)
+  - operations performed on [page-table nodes](https://github.com/gwsystems/composite/blob/v4/src/kernel/cos.c#L522-L597) such as mapping in memory, copying mappings, and [hooking](https://github.com/gwsystems/composite/blob/v4/src/kernel/cos.c#L583-L593) lower-levels in the page-table into higher-levels (and vice-versa).
+  - The *fast-path* for Protected-Procedure Calls (i.e. IPC) includes both [invoking and returning](https://github.com/gwsystems/composite/blob/v4/src/kernel/include/ipc.h) -- the entire system is designed to make this fast.
+- The [system call handler](https://github.com/gwsystems/composite/blob/v4/src/kernel/cos.c#L745-L753) -- the main entry point into the kernel.
+
+Questions:
+
+1. What thread operations are there? Summarize what they do.
+2. Summarize what the PPC path does.
+3. The retyping logic 
+
+## 10: composite libs
 ## 11: unikraft
 ## 12: nova
 ## 13: komodo

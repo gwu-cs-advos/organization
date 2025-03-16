@@ -264,7 +264,8 @@ Questions:
 
 1. What thread operations are there? Summarize what they do.
 2. Summarize what the PPC path does.
-3. The retyping logic 
+3. The retyping logic has to synchronize between cores.
+   Any guesses how this is done?
 
 ## 10: composite libs
 ## 11: unikraft

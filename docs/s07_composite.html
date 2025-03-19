@@ -667,7 +667,7 @@ frame_retype_to(frame_t frame, enum frame_type type)
 		 */
 		if (frames_meta[frame].refcnt != 0) return -1;
 
-		switch (frames_meta[frame]) {
+		switch (frames_meta[frame].type) {
 		case FRAME_TYPE_THREAD:
 			thread_deinitialize_frame(&frames[frame]);
 			break;
@@ -964,6 +964,74 @@ $^*$ simple to implement, conceptually challenging
 
 ---
 
+<div class="multicolumn">
+<div>
+
+```mermaid
+block-beta
+	columns 2
+	block:C1
+		c0["C"]
+	end
+	block:C2
+		c1["Mgr"]
+	end
+	block:K:2
+		columns 3
+		c5(["ct0"])
+		space
+		c6(["ct1"])
+		space
+		space
+		space
+		c7(["r0"])
+		c8(["r1"])
+		c9(["r2"])
+	end
+	c0 --> c5
+	c1 --> c6
+	c5 --> c7
+	c6 --> c9
+	c5 --> c8
+	c6 --> c5
+```
+
+</div><div>
+
+```mermaid
+block-beta
+	columns 2
+	block:C1
+		c0["C"]
+	end
+	block:C2
+		c1["Mgr"]
+	end
+	block:K:2
+		columns 3
+		c5(["ct0"])
+		space
+		c6(["ct1"])
+		space
+		space
+		space
+		c7(["r0"])
+		c8(["r1"])
+		c9(["r2"])
+	end
+	c0 --> c5
+	c1 --> c6
+	c5 --> c7
+	c6 --> c9
+	c5 --> c8
+	c6 --> c5
+	c5 --> c9
+```
+
+</div></div>
+
+---
+
 ```c [1,2|7-8|10-14|16|19-20|28-29|31-35|38]
 int
 captbl_syscall(cap_t cap_to_cli_captbl, cap_t cap_to_deleg, cap_t cap_in_cli_captbl, op_t op)
@@ -1019,7 +1087,7 @@ copy_cap(struct captbl *cli_captbl, cap_t cap_in_cli_captbl, struct capability *
 
 Policies for horizontal isolation
 - defined by user-level components
-- can be defined
+- can be defined using any appropriate policy
 
 ---
 
@@ -1039,7 +1107,15 @@ This is the *hard part*.
 - Delegation = removing access to all caps in a subtree
 - Expensive, complicated
 
-Or, again, just provide a `rm_cap` operation
+Easier options?
+
+---
+
+## Capability Revocation
+
+Track the tree of delegations in the manager
+
+Provide a `rm_cap` operation
 - require a manager component to track delegations
 - perform the appropriate revocations
 
@@ -1065,6 +1141,131 @@ Or, again, just provide a `rm_cap` operation
 Manager component has access to captbls of clients
 - copy resource access into multiple clients
 - ... = sharing!
+
+---
+
+<div class="multicolumn">
+<div>
+
+```mermaid
+block-beta
+	columns 3
+	block:C3
+		c2["C"]
+	end
+	block:C1
+		c0["C"]
+	end
+	block:C2
+		c1["Mgr"]
+	end
+	block:K:3
+		columns 3
+		space
+		space
+		c6(["ct1"])
+		c11(["ct2"])
+		c5(["ct0"])
+		space
+		space
+		space
+		space
+		c7(["r0"])
+		c8(["r1"])
+		c9(["r2"])
+	end
+	c2 --> c11
+	c0 --> c5
+	c1 --> c6
+	c5 --> c7
+	c6 --> c9
+	c5 --> c8
+	c6 --> c5
+	c6 --> c11
+```
+
+</div><div>
+
+```mermaid
+block-beta
+	columns 3
+	block:C3
+		c2["C"]
+	end
+	block:C1
+		c0["C"]
+	end
+	block:C2
+		c1["Mgr"]
+	end
+	block:K:3
+		columns 3
+		space
+		space
+		c6(["ct1"])
+		c11(["ct2"])
+		c5(["ct0"])
+		space
+		space
+		space
+		space
+		c7(["r0"])
+		c8(["r1"])
+		c9(["r2"])
+	end
+	c2 --> c11
+	c0 --> c5
+	c1 --> c6
+	c5 --> c7
+	c6 --> c9
+	c5 --> c8
+	c6 --> c5
+	c6 --> c11
+	c5 --> c9
+```
+
+</div><div>
+
+```mermaid
+block-beta
+	columns 3
+	block:C3
+		c2["C"]
+	end
+	block:C1
+		c0["C"]
+	end
+	block:C2
+		c1["Mgr"]
+	end
+	block:K:3
+		columns 3
+		space
+		space
+		c6(["ct1"])
+		c11(["ct2"])
+		c5(["ct0"])
+		space
+		space
+		space
+		space
+		c7(["r0"])
+		c8(["r1"])
+		c9(["<font color='red'>r2</font>"])
+	end
+	c2 --> c11
+	c0 --> c5
+	c1 --> c6
+	c5 --> c7
+	c6 --> c9
+	c5 --> c8
+	c6 --> c5
+	c6 --> c11
+	c5 --> c9
+	c11 --> c9
+```
+
+</div></div>
 
 ---
 
@@ -1095,9 +1296,9 @@ How can we establish *vertical isolation* through client/server requests?
 
 ---
 
-## Use Pipes?
+## Use Pipes or Sockets??
 
-Pipes:
+Pipes/sockets:
 - In-kernel buffer to store data (2xcopy)
 - Asynchronous threads
   - 2x scheduler decisions + context switch
@@ -1123,42 +1324,74 @@ Pipes in Linux:
 
 ---
 
+## Perspective
+
+Pipes in Linux:
+- ~5000 cycles = 2.5$\mu$-second overhead
+- *Prohibitive levels of overhead for many systems* (WHY?)
+
+We're talking about an IPC mechanism that is the building block for vertical isolation -- replacing syscalls! <!-- .element: class="fragment" data-fragment-index="4" -->
+
+---
+
 ## First Principles: Operations
 
-Syscalls:
+Syscalls -- 2x instead of 4x:
 - client `call` syscall
-- server execute + return inverse of a system call
-2x syscalls
+- server `return` syscall
 
 Data passed in registers:
-- up to 128B...more? Use shared memory.
+- up to 128B. More? Use shared memory.
 
 Access control:
 - Capability table - capability to "synchronously invoke" server function
+- **Protected Procedure Call** (PPC)
 
 ---
 
 ## No Thread Switch!
+
+Thread executing in client, *continues* in server
+- ...but *across protection domains*
 
 Does *not* require switching threads!
 - Analogy: we don't switch threads on a system call to the kernel!
 
 ---
 
-## How Can we Implement This?
+## Vertical Isolation Requirements
 
-1. Track a Component "invocation stack" in the kernel
-   - conceptually similar to the C function call stack
-   - invoke a function in a component: push onto stack
-   - return from a function call in a component: pop off stack
-2. Synchronous invocation capability
-   - identifies server to invoke
-   - instruction pointer to start execution at
-   - token to pass to the server for authentication
+1. Abstract resources
+2. Memory isolation
+3. Authentication
+4. CFI
 
 ---
 
-```c [1-2|11|4,13-14|16-32|34-47]
+## Vertical Isolation Requirements
+
+1. Abstract resources - <br>capabilities + server naming with opaque identifiers
+2. Memory isolation - <br>components isolated using page-tables
+3. Authentication - ???
+4. CFI - ???
+
+---
+
+## How Can we Implement This?
+
+Track a Component "invocation stack" in the kernel
+- conceptually similar to the C function call stack
+- invoke a function in a component: push onto stack
+- return from a function call in a component: pop off stack, return to instruction ptr (**CFI**)
+
+Synchronous invocation capability
+- identifies server to invoke
+- instruction pointer to start execution at (**CFI**)
+- token to pass to the server for authentication (**auth**)
+
+---
+
+```c [1-2|11|4,13-14|16-32|32|34-47]
 int
 captbl_syscall(cap_t cap, long arg0, long arg1, ..., long ip, long sp)
 {
@@ -1215,11 +1448,14 @@ captbl_syscall(cap_t cap, long arg0, long arg1, ..., long ip, long sp)
 
 ## Simple Cross-Component Function Calls
 
-Maintain vertical isolation
-- *Isolation*: separate page-tables/protection domains
-- *Authentication*: token passed up to server
-- *CFI*: only execute at capability-protected instruction pointers
-- *Efficiency*: ~850 cycles (vs. 5000 for pipes)
+Protected Procedure Calls maintain vertical isolation
+
+| Requirement              | Design     |
+|--------------------------|------------|
+| *Isolation*              | separate page-tables/protection domains |
+| *Authentication*         | token passed up to server |
+| *Control-Flow Integrity* | 1. upcall at capability-protected instr. ptrs<br>2. resume client exec @ invstk saved ip |
+| *Efficiency*             | ~850 cycles<br>(vs. 5000 [500] for pipes [syscall]) |
 
 ---
 
@@ -1257,15 +1493,38 @@ Client:
 
 ---
 
+## Core OS Outline
+
+- How do we *name* resources?
+- How can we manage *kernel memory* and use it as component resources?
+- How can implement *policy to "split up" memory* across components?
+- How can we *share* access to kernel resources?
+- How can we *coordinate between components*?
+- **How do we define *scheduling policy*?**
+
+---
+
 ## Thread Execution & Scheduling Problem
 
-Where do threads execute?
+*Where* do threads execute?
 
 1️⃣ Only in a single component.
-- Q: How do component's coordinate?
-  Inter-thread coordination. <!-- .element: class="fragment" data-fragment-index="2" -->
+- Q: How do component's coordinate?<br>
+- A: Inter-thread coordination. <!-- .element: class="fragment" data-fragment-index="2" -->
 - A: Inter-thread coordination $\to$ scheduling decision on IPC.
   Component-defined scheduling policy? <!-- .element: class="fragment" data-fragment-index="3" -->
+
+---
+
+## Thread Execution & Scheduling Problem
+
+*Where* do threads execute?
+
+1️⃣ Only in a single component.
+- Observation: Inter-thread coordination requires a scheduling decision.
+- Implication: If IPC involves separate client/server threads, requires 2 scheduler decisions.
+
+If scheduling policy is at user-level, each IPC = 3 IPC!  <!-- .element: class="fragment" data-fragment-index="2" -->
 
 ---
 
@@ -1274,10 +1533,411 @@ Where do threads execute?
 Where do threads execute?
 
 2️⃣ *Across* components (e.g. syscall).
-- Q: How do component's coordinate?  <!-- .element: class="fragment" data-fragment-index="2" -->
-- A: Thread executes across components during IPC.
-  How do we track where a thread is executing?
-  How do we know where to start executing in a component. <!-- .element: class="fragment" data-fragment-index="3" -->
+- Q: How do component's coordinate?
+- A: Thread executes *across* components during PPC.
+
+No scheduler interaction required!
+
+---
+
+## Scheduler Components
+
+Can switch to threads - *dispatch*
+- activating a capability to a thread resource
+- scheduling policy decides which thread to dispatch to
+- scheduler = component that has capabilities to threads
+
+---
+
+## Schedulers
+
+A thread executing in a manager needs to block (`sleep(1)`, `mutex_lock(...)`, `read(fd, ...)`)?
+- Time Manager or FS Manager invokes (PPCs) the scheduler
+- scheduler's `thread_block()` logic will dispatch to another thread after...
+- updating scheduler's data-structures to track the thread blocking
+
+---
+
+*Scenario*<br>Implement `sleep` using a timer manager and scheduler
+
+```mermaid
+sequenceDiagram
+	autonumber
+    client-->>Time Mgr: sleep(1)
+    Time Mgr-->>Sched: thd_block_timeout(1)
+	Sched-->>kernel: capability_activate(other_thd_cap)
+	kernel-->>other thd:execute
+	kernel-->>Sched: timer_notify(1)
+	Sched-->>kernel: capability_activate(sleeping_thread_cap)
+    Sched-->>Time Mgr:return
+	Time Mgr-->>client:return
+```
+
+
+---
+
+## Preemption
+
+Timer interrupts
+- Preempt currently executing thread
+- Typically invoke the scheduler
+
+CoreOS: timer activates a "timer thread" in scheduler
+
+---
+
+# Composite: a $\mu$-Kernel for the Component-based Definition of OSes
+
+---
+
+## Resources
+
+- Threads
+- Page-/captbl-nodes
+- Components
+- VM pages
+
+---
+
+## Thread Creation
+
+Creation (retype) requires
+- capability to component
+- the component thread starts executing in
+
+---
+
+## Thread Operations
+
+Operations on thread capabilities
+- dispatch to that thread
+- preempted thread might be in another component!
+- used by schedulers
+- argument: absolute time of future timer
+
+---
+
+## Page-/Capability-Table Creation
+
+Only requires
+- capability to a page to retype
+- creates an "empty node"...
+- at a specific level in the radix trie
+- captbls = 2-level radix trie
+- pgtbls = 4-level radix trie
+
+Generalize name to "resource tables"
+
+---
+
+## Page-/Capability-Table Ops I
+
+Operations on capabilities to resource tables
+
+`construct(captop, capbot, offset)`
+- "hook" a level $n+1$ resource table into one of level $n$ at a specific offset
+
+```c
+t = captbl_lookup(ct, captop);
+b = captbl_lookup(ct, capbot);
+assert(lvl(t) = lvl(b) + 1);
+t[off] = b;
+frame_meta(b).refcnt++
+```
+
+---
+
+## Page-/Capability-Table Ops II
+
+Operations on capabilities to resource tables
+
+`deconstruct(captop, offset)`
+- remove a link in a resource table to a next level
+
+```c
+t = captbl_lookup(ct, captop);
+b = t[off];
+frame_meta(b).refcnt--;
+t[off] = NULL;
+```
+
+---
+
+## Page-/Capability-Table Ops III
+
+`cap_copy(tocap, tooff, fromcap, fromoff, perms)`
+- *delegation*
+
+```c
+rtto   = captbl_lookup(ct, tocap);
+rtfrom = captbl_lookup(ct, fromcap);
+rtto[tooff] = rtfrom[fromoff];
+rtto[tooff].perm &= perms;
+frame_meta(rtto[tooff]).refcnt++;
+```
+
+---
+
+## Page-/Capability-Table Ops IV
+
+`cap_rem(cap, off, perms)`
+- *revocation*
+
+```c
+rt = captbl_lookup(ct, cap);
+rt[off].perm &= perms;
+if (perms == 0) frame_meta(rt[off]).refcnt--;
+```
+
+---
+
+## Page-/Capability-Table Ops V
+
+Retyping
+- See earlier!
+
+---
+
+## Page-table/VM Page Ops: Map/Unmap
+
+`cap_map(cap, off, vmcap, perm)`
+- operation on leaf-level of pgtbl
+
+```c
+ptleaf = captbl_lookup(ct, cap);
+vmpage = captbl_lookup(ct, vmcap);
+if (type(ptleaf) != PAGe_TYPE_PGTBL_LEAF) return -1;
+ptleaf[off] = vmpage;
+frame_meta(vmpage).refcnt++;
+```
+
+---
+
+## Component Operations
+
+`cap_create_component(cap, cappgtbl, capcaptbl, entry_addr)`
+
+```c
+c_pt = captbl_lookup(ct, cappgtbl);
+c_ct = captbl_lookup(ct, capcaptbl);
+slot = &captbl_lookup_slot(ct, cap);
+slot = (struct component_cap) {
+	.type       = CAP_TYPE_COMPONENT,
+	.pt         = c_pt,
+	.ct         = c_ct,
+	.entry_addr = entry_addr,
+};
+frame_meta(c_pt).refcnt++;
+frame_meta(c_ct).refcnt++;
+```
+
+---
+
+## Component Capability
+
+Access rights for a component capability
+- Conveys CFI control
+- `entry_addr` instruction entry point for all new threads
+
+---
+
+## Synchronous Invocations (PPC)
+
+`cap_create_sinv(cap, compcap, entry_addr, auth_token)`
+
+```c
+comp = captbl_lookup(ct, compcap);
+slot = captbl_lookup_slot(ct, cap);
+slot = (struct sinv_cap) {
+	.type       = CAP_TYPE_SINV,
+	.comp_pt    = comp.pt,
+	.comp_ct    = comp.ct,
+	.entry_addr = entry_addr,
+	.token      = auth_token,
+};
+```
+
+---
+
+## Synchronous Invocations (PPC)
+
+Each sinv capability enables
+- "calling" a function using PPC in the associated server
+
+Core vertical isolation facility
+
+---
+
+## Synchronous Invocations: *call* and *return*
+
+`cap_call(sinvcap, args...)`
+- PPC call
+- Pass the sinv's `token` to server component, start executing at `entry_addr`
+- ip/sp cap/pgtbl of current component tracked on invocation stack
+
+`cap_ret(retvals...)`
+- `0` capability hardcoded to be "return"
+- pop context to return to off invocation stack
+
+---
+
+## Details & Complexities I
+
+*Trade-off*: capability dense representation vs. fast lookup
+- use page-table leafs as access control to resource *modifications* ((de)construct/copy/remove/map/retype/...)
+- use capability-tables for the *fast-path* operations to use resources (call/return/dispatch)
+
+---
+
+## Details & Complexities II
+
+Resource table management
+- "Allocate new capability `cap`" (`cap_copy`)
+- ...but what if the capability-table doesn't have memory allocated to cover address `cap`!?
+- Need user-level libraries to help manage this complexity
+
+---
+
+## Details & Complexities III
+
+Scheduling and time management
+- What restrictions are there are on schedulers to limit how they program the timer?
+- Multiple schedulers that should have limited interference on each other!
+- Temporal Capabilities - control the inter-scheduler interference and coordination
+
+---
+
+## Details & Complexities IV
+
+Virtualization
+- Supportes Intel's hardware virtualization
+- Multiple kernel resources and operations
+- Can run Linux in a VM as a component
+
+---
+
+## Details & Complexities V
+
+Parallelism:
+- No locks in the kernel
+- All logic is wait-free - per-thread progress guarantees
+- User-level has to worry about this, kernel ensures its own safety
+
+---
+
+## Code Layers
+
+`cos` library:
+- shared between kernel and user-level
+- system call layer -- ABI
+
+`capops` library:
+- wrappers for common operations around `cos`
+
+`rtm` library:
+- abstractions to allocate and manage resource tables (pgtbls & captbls)
+
+---
+
+## Code Layers
+
+`crt` runtime for higher-level ops
+- Create component (from elf object)
+- Create PPC capabilities
+- layered on top of `rtm`, `capops`
+
+`component` mandatory lib
+- runtime to boot up components
+
+`slm` scheduling library:
+- library to simplify writing schedulers
+- critical section, thread states, thread ops
+
+---
+
+## Kernel Layer Organization
+
+- syscall entry (`syscall_handler`)
+- capability operations (`cos.c`)
+- capability-/page-table operations<br>(`[cap|pgtbl]*.[c|h]`)
+- resource operations, e.g retyping (`resources.c`)
+- hardware abstraction (`[chal|arch]*`)
+
+---
+
+<div class="center">
+
+```mermaid
+block-beta
+	columns 3
+	block:C1:1
+		columns 1
+		space
+		space
+		app["App"]
+		capops1["capops"]
+		cos1["cos"]
+	end
+	block:C2:1
+		columns 1
+		mgr["Mgr"]
+		crt["crt"]
+		rtm["rtm"]
+		capops2["capops"]
+		cos2["cos"]
+	end
+	block:C3:1
+		columns 1
+		space
+		sched["Sched"]
+		slm3["slm"]
+		capops3["capops"]
+		cos3["cos"]
+	end
+	block:K:3
+		columns 1
+		sc["syscall entry"]
+		ops["capability operations"]
+		tbl["resource tbl operations"]
+		res["resource operations (retype)"]
+		hw["hardware abstraction"]
+	end
+
+```
+
+</div>
+
+---
+
+### Composite is an OS Toolkit: OS by Legos
+
+| OS | Description |
+| --- | --- |
+| *FJOS* | OS optimized around fork-join parallelism |
+| *Chaos* | OS to control coordination between mission-critical and massively complex parts of embedded systems  |
+| *Byways* | Network processing (abstraction) for VMs that is strongly isolated |
+| *EdgeOS* | OS for Multi-tenant edge clouds: strong isolation, high density, bounded latency |
+| *Patina* | Principle-of-Least Privilege centric RTOS |
+| *Janus* | Leverage hardware support to enable fully user-level fast-paths (PPC and dispatch at user-level) |
+| *Assured voting bulletin-board* | Online, high-confidence resource for validating votes |
+
+---
+
+### Composite is an OS Toolkit: OS by Legos
+
+Common denominator is system that:
+- require strong safety/security
+- benefit from specialized/optimized construction
+
+---
+
+## Composite Impossibilities
+
+- The kernel has no scheduler
+- The kernel has no locks,<br>but can run (well) on many cores
+- The kernel has no memory allocator,<br>user-level safely manages its memory
+- Threads execute *across* many different components
+- User-level schedulers preemptively schedule all system threads (and interrupts)
                     </textarea>
                 </section>
             </div>

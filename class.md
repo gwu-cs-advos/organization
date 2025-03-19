@@ -60,9 +60,9 @@ Please fill out the required form for deadlines by noon on the day of the deadli
 | R3.13 | Spring recess                |                                                                                                        |
 | T3.18 | composite scheduling         | [composite kernel](https://github.com/gwu-cs-advos/organization/blob/main/class.md#9-composite-kernel) |
 | R3.20 | specialization               |                                                                                                        |
-| T3.25 | unikraft                     | [composite libs](https://github.com/gwu-cs-advos/organization/blob/main/class.md#10-composite-libs)    |
+| T3.25 | unikraft                     | [unikraft](https://github.com/gwu-cs-advos/organization/blob/main/class.md#10-unikraft)                |
 | R3.27 | interface & component design |                                                                                                        |
-| T4.01 | nova                         | [unikraft](https://github.com/gwu-cs-advos/organization/blob/main/class.md#11-unikraft)                |
+| T4.01 | nova                         | [composite libs](https://github.com/gwu-cs-advos/organization/blob/main/class.md#11-composite-libs)    |
 | R4.03 | interface & component design |                                                                                                        |
 | T4.08 | komodo                       | [nova](https://github.com/gwu-cs-advos/organization/blob/main/class.md#12-nova)                        |
 | R4.10 | interface & component design |                                                                                                        |
@@ -267,8 +267,28 @@ Questions:
 3. The retyping logic has to synchronize between cores.
    Any guesses how this is done?
 
-## 10: composite libs
-## 11: unikraft
+## 10: unikraft
+
+One direction that some OSes have taken is to support *system specialization*.
+Can we remove both the semantic gap, and superfluous functionality that slows the system down if we
+1. make the entire OS support *a single application* (similar to the demikernel), and
+2. enable the OS to be specialized to that application in some way.
+
+Popular systems over the past decade that focus on these two goals are *unikernels* - kernels that specialize for a single application.
+A very cool unikernel is [unikraft](https://github.com/gwu-cs-advos/unikraft).
+
+Read through the code and try to understand and answer the following questions:
+1. In what ways can the system be customized/specialized?
+2. How is the code written in a way that enables this specialization (this is ambiguous to enable to to learn any interesting configuration methods in the system)?
+3. Describe three of the libraries (in `lib/`) that are interesting to you.
+
+## 11: composite libs
+
+While we've discussed the Composite kernel, because most of the interesting policies in the system are defined in user-level compoenents, it is important to look at a few of the user-level abstractions.
+This includes the libraries we use to abstract services, and the components that provide the policies.
+
+TBD.
+
 ## 12: nova
 ## 13: komodo
 ## 14: nickel
@@ -309,6 +329,27 @@ Some examples:
 Detail what you've done in the `README.md`, including who worked on what part.
 Provide high-level context for what your service's goals are, what it is trying to do, how it uses 1-5 above, and some very high-level documentation into the design with links to the corresponding code.
 Provide information about your testing of the project, and how I can run the tests.
+
+## 2: System Enhancement and/or Design
+
+Apply some of the concepts you've learned or we've discussed in the class in some systems domain.
+You can take one of the systems we've discussed, and add a feature, port an application to them, or implement a service in them.
+You can also propose to do something novel or interesting in another OS, or in systems-level code.
+Please write a brief proposal, and send it to me via email, and when you do, ping me in the Discord DMs.
+
+This is intentionally vague so that it gives you some lattitude to work one something of interest.
+If you're already working on some systems project (or research), it is OK to propose that.
+
+Examples within the systems we've discussed:
+
+1. Install and use Unikraft in a VM on your system. Either
+   a. compare the performance of an application in your system versus in unikraft (e.g. nginx, redis, ...)
+   b. write and application that is a good fit for unikraft, for example, a simple MQTT broker.
+2. Install Plan 9 in a VM, and write a file system server that does something interesting (this is similar to the first project, but in Plan 9).
+3. Install/[build](https://github.com/microsoft/demikernel/blob/dev/doc/building.md) Demikernel and using catnap (that uses sockets from the underlying OS to back the demikernel logic), [run](https://github.com/microsoft/demikernel/blob/dev/doc/testing.md), and measure performance of an microbenchmarks.
+4. Write a network-facing application (e.g. MQTT broker) using libuv.
+
+As a first-cut expectation, I'd assume that you'd want to stick with a systems language: C, C++, Rust, go.
 
 # Grading
 

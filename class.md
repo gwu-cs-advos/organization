@@ -38,38 +38,38 @@ These are generated from markdown [in the book's repo](https://github.com/gwu-cs
 
 Please fill out the required form for deadlines by noon on the day of the deadline -- i.e. around 2.33 hours *before* the class.
 
-| Date  | Class topic                  | Due                                                                                                    |
-|-------|------------------------------|--------------------------------------------------------------------------------------------------------|
-| T1.14 | organization, reading code   |                                                                                                        |
-| R1.16 | complexity                   |                                                                                                        |
-| T1.21 | xv6 + busybox                | [xv6](https://github.com/gwu-cs-advos/organization/blob/main/class.md#2-xv6)                           |
-| R1.23 | abstraction                  |                                                                                                        |
-| T1.28 | plan9 + busybox + systemd    | [busybox](https://github.com/gwu-cs-advos/organization/blob/main/class.md#3-busybox)                   |
-| R1.30 | organizing components        |                                                                                                        |
-| T2.04 | plan9 + go                   | [plan9](https://github.com/gwu-cs-advos/organization/blob/main/class.md#4-plan9)                       |
-| R2.06 | organizing components        |                                                                                                        |
-| T2.11 | go + libuv + node            | [go](https://github.com/gwu-cs-advos/organization/blob/main/class.md#5-go)                             |
-| R2.13 | isolation                    |                                                                                                        |
-| T2.18 | libuv + demikernel           | [libuv](https://github.com/gwu-cs-advos/organization/blob/main/class.md#6-libuv)                       |
-| R2.20 | isolation                    |                                                                                                        |
-| T2.25 | composite design             | [demikernel](https://github.com/gwu-cs-advos/organization/blob/main/class.md#7-demikernel)             |
-| R2.27 | isolation                    |                                                                                                        |
-| T3.04 | composite runtime            |  													|
-| R3.06 | interface design             | [UNIX Service](https://github.com/gwu-cs-advos/organization/blob/main/class.md#1-unix-service)         |
-| T3.11 | Spring recess                |                                                                                                        |
-| R3.13 | Spring recess                |                                                                                                        |
-| T3.18 | composite scheduling         | [composite kernel](https://github.com/gwu-cs-advos/organization/blob/main/class.md#9-composite-kernel) |
-| R3.20 | specialization               |                                                                                                        |
-| T3.25 | unikraft                     | [unikraft](https://github.com/gwu-cs-advos/organization/blob/main/class.md#10-unikraft)                |
-| R3.27 | interface & component design |                                                                                                        |
-| T4.01 | nova                         | [composite libs](https://github.com/gwu-cs-advos/organization/blob/main/class.md#11-composite-libs)    |
-| R4.03 | interface & component design |                                                                                                        |
-| T4.08 | komodo                       | [nova](https://github.com/gwu-cs-advos/organization/blob/main/class.md#12-nova)                        |
-| R4.10 | interface & component design |                                                                                                        |
-| T4.15 | komodo + nickel              | [komodo](https://github.com/gwu-cs-advos/organization/blob/main/class.md#13-komodo)                    |
-| R4.17 | security                     |                                                                                                        |
-| T4.22 | nickel                       | [nickel](https://github.com/gwu-cs-advos/organization/blob/main/class.md#14-nickel)                    |
-| R4.24 |                              |                                                                                                        |
+| Date  | Class topic                  | Due                                                                                                                       |
+|-------|------------------------------|---------------------------------------------------------------------------------------------------------------------------|
+| T1.14 | organization, reading code   |                                                                                                                           |
+| R1.16 | complexity                   |                                                                                                                           |
+| T1.21 | xv6 + busybox                | [xv6](https://github.com/gwu-cs-advos/organization/blob/main/class.md#2-xv6)                                              |
+| R1.23 | abstraction                  |                                                                                                                           |
+| T1.28 | plan9 + busybox + systemd    | [busybox](https://github.com/gwu-cs-advos/organization/blob/main/class.md#3-busybox)                                      |
+| R1.30 | organizing components        |                                                                                                                           |
+| T2.04 | plan9 + go                   | [plan9](https://github.com/gwu-cs-advos/organization/blob/main/class.md#4-plan9)                                          |
+| R2.06 | organizing components        |                                                                                                                           |
+| T2.11 | go + libuv + node            | [go](https://github.com/gwu-cs-advos/organization/blob/main/class.md#5-go)                                                |
+| R2.13 | isolation                    |                                                                                                                           |
+| T2.18 | libuv + demikernel           | [libuv](https://github.com/gwu-cs-advos/organization/blob/main/class.md#6-libuv)                                          |
+| R2.20 | isolation                    |                                                                                                                           |
+| T2.25 | composite design             | [demikernel](https://github.com/gwu-cs-advos/organization/blob/main/class.md#7-demikernel)                                |
+| R2.27 | isolation                    |                                                                                                                           |
+| T3.04 | composite runtime            |                                                                                                                           |
+| R3.06 | interface design             | [UNIX Service](https://github.com/gwu-cs-advos/organization/blob/main/class.md#1-unix-service)                            |
+| T3.11 | Spring recess                |                                                                                                                           |
+| R3.13 | Spring recess                |                                                                                                                           |
+| T3.18 | composite scheduling         | [composite kernel](https://github.com/gwu-cs-advos/organization/blob/main/class.md#9-composite-kernel)                    |
+| R3.20 | specialization               |                                                                                                                           |
+| T3.25 | unikraft                     | [unikraft](https://github.com/gwu-cs-advos/organization/blob/main/class.md#10-unikraft)                                   |
+| R3.27 | interface & component design |                                                                                                                           |
+| T4.01 | nova                         | [composite libs](https://github.com/gwu-cs-advos/organization/blob/main/class.md#11-composite-libs)                       |
+| R4.03 | interface & component design |                                                                                                                           |
+| T4.08 | komodo                       | [nova](https://github.com/gwu-cs-advos/organization/blob/main/class.md#12-nova)                                           |
+| R4.10 | interface & component design |                                                                                                                           |
+| T4.15 | komodo + nickel              | [komodo](https://github.com/gwu-cs-advos/organization/blob/main/class.md#13-komodo)                                       |
+| R4.17 | security                     |                                                                                                                           |
+| T4.22 | nickel                       | [nickel](https://github.com/gwu-cs-advos/organization/blob/main/class.md#14-nickel)                                       |
+| R4.24 |                              | [System Investigation](https://github.com/gwu-cs-advos/organization/blob/main/class.md#2-system-enhancement-andor-design) |
 
 # Systems
 
@@ -279,17 +279,21 @@ A very cool unikernel is [unikraft](https://github.com/gwu-cs-advos/unikraft).
 
 Read through the code and try to understand and answer the following questions:
 1. In what ways can the system be customized/specialized?
-2. How is the code written in a way that enables this specialization (this is ambiguous to enable to to learn any interesting configuration methods in the system)?
+2. How is the code written in a way that enables this specialization (this is ambiguous to enable to learn any interesting configuration methods in the system)?
 3. Describe three of the libraries (in `lib/`) that are interesting to you.
 
 ## 11: composite libs
 
-While we've discussed the Composite kernel, because most of the interesting policies in the system are defined in user-level compoenents, it is important to look at a few of the user-level abstractions.
-This includes the libraries we use to abstract services, and the components that provide the policies.
+While we've discussed the Composite *kernel*, it is important to understand the user-level abstractions of the system as most of the interesting policies in the system are defined in user-level components.
+This includes the libraries we use to abstract kernel resources and operations, and the components that provide the policies.
 
-TBD.
+To inspire your reading of the code, [Composite as an industrial song](resources/Capability\'s\ Cage.mp3) to lull you to sleep while thinking about capabilities (thanks Sean & Sonu).
 
 ## 12: nova
+
+VMs are an integral and essential part of modern infrastructure.
+Even serverless offers that try and abstract away from the core hardware completely rely entirely on VMs (see Firecracker).
+
 ## 13: komodo
 ## 14: nickel
 

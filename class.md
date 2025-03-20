@@ -291,7 +291,7 @@ You can see the *evolution* of some of these policies by comparing:
 - version 3: supporting only bump-pointer allocations
 - version 4 (in progress): supporting allocations and deallocations anywhere in a range of the capability namespace
 
-To inspire your reading of the code, [Composite as an industrial song](resources/Capability\'s\ Cage.mp4) to lull you to sleep while thinking about capabilities (thanks Sean & Sonu).
+To inspire your reading of the code, [Composite as an industrial song](https://github.com/user-attachments/assets/a99bf496-6185-43f4-bee7-e547ca636381) (also found in `resources/Capability\'s\ Cage.mp3`) to lull you to sleep while thinking about capabilities (thanks Sean & Sonu).
 
 ## 12: nova
 

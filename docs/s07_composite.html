@@ -1359,6 +1359,32 @@ Does *not* require switching threads!
 
 ---
 
+### IPC Between threads
+```mermaid
+sequenceDiagram
+	autonumber
+    client-->>kernel thd A: "call" syscall
+    kernel thd A-->>kernel thd B: schedule, dispatch, switch pgtbl
+	kernel thd B-->>server: return from "return" syscall
+	server-->>kernel thd B: "return" syscall
+	kernel thd B-->>kernel thd A: schedule, dispatch, switch pgtbl
+	kernel thd A-->>client: return from "call" syscall
+```
+
+---
+
+### IPC with PPC, Single Thread
+```mermaid
+sequenceDiagram
+	autonumber
+    client-->>kernel: "call" syscall
+    kernel-->>server: switch pgtbl, return from "return" syscall
+	server-->>kernel: "return" syscall
+	kernel-->>client: switch pgtbl, return from "call" syscall
+```
+
+---
+
 ## Vertical Isolation Requirements
 
 1. Abstract resources
@@ -1459,39 +1485,39 @@ Protected Procedure Calls maintain vertical isolation
 
 ---
 
-## ...for Horizontal Isolation
+<!-- ## ...for Horizontal Isolation -->
 
-Client: `sbrk(4096)`
-- triggers `capability_syscall(sbrk_capnum)`
-- kernel synchronous invocation path
+<!-- Client: `sbrk(4096)` -->
+<!-- - triggers `capability_syscall(sbrk_capnum)` -->
+<!-- - kernel synchronous invocation path -->
 
-...
+<!-- ... -->
 
----
+<!-- --- -->
 
-## ...for Horizontal Isolation
+<!-- ## ...for Horizontal Isolation -->
 
-...
+<!-- ... -->
 
-Server: `sbrk(4096)` called
-- `client_id_t = get_token()`
-- Access data-structures to track where client's capability-tables are
-- use `copy_cap` to make a page-accessible in client's page-table
-- return from call
+<!-- Server: `sbrk(4096)` called -->
+<!-- - `client_id_t = get_token()` -->
+<!-- - Access data-structures to track where client's capability-tables are -->
+<!-- - use `copy_cap` to make a page-accessible in client's page-table -->
+<!-- - return from call -->
 
-...
+<!-- ... -->
 
----
+<!-- --- -->
 
-## ...for Horizontal Isolation
+<!-- ## ...for Horizontal Isolation -->
 
-...
+<!-- ... -->
 
-Client:
-- return from call to `sbrk`
-- has access to memory!
+<!-- Client: -->
+<!-- - return from call to `sbrk` -->
+<!-- - has access to memory! -->
 
----
+<!-- --- -->
 
 ## Core OS Outline
 
@@ -1671,6 +1697,7 @@ t[off] = NULL;
 ```c
 rtto   = captbl_lookup(ct, tocap);
 rtfrom = captbl_lookup(ct, fromcap);
+if (!captbl_entry_is_empty(rtto[tooff]) return -1
 rtto[tooff] = rtfrom[fromoff];
 rtto[tooff].perm &= perms;
 frame_meta(rtto[tooff]).refcnt++;
@@ -1706,7 +1733,7 @@ Retyping
 ```c
 ptleaf = captbl_lookup(ct, cap);
 vmpage = captbl_lookup(ct, vmcap);
-if (type(ptleaf) != PAGe_TYPE_PGTBL_LEAF) return -1;
+if (type(ptleaf) != PAGE_TYPE_PGTBL_LEAF) return -1;
 ptleaf[off] = vmpage;
 frame_meta(vmpage).refcnt++;
 ```
@@ -1755,6 +1782,7 @@ slot = (struct sinv_cap) {
 	.entry_addr = entry_addr,
 	.token      = auth_token,
 };
+// refcnts...
 ```
 
 ---
@@ -1822,6 +1850,16 @@ Parallelism:
 - No locks in the kernel
 - All logic is wait-free - per-thread progress guarantees
 - User-level has to worry about this, kernel ensures its own safety
+
+---
+
+## Composite Impossibilities
+
+- The kernel has no scheduler
+- The kernel has no locks,<br>but can run (well) on many cores
+- The kernel has no memory allocator,<br>user-level safely manages its memory
+- Threads execute *across* many different components
+- User-level schedulers preemptively schedule all system threads (and interrupts)
 
 ---
 
@@ -1929,16 +1967,6 @@ block-beta
 Common denominator is system that:
 - require strong safety/security
 - benefit from specialized/optimized construction
-
----
-
-## Composite Impossibilities
-
-- The kernel has no scheduler
-- The kernel has no locks,<br>but can run (well) on many cores
-- The kernel has no memory allocator,<br>user-level safely manages its memory
-- Threads execute *across* many different components
-- User-level schedulers preemptively schedule all system threads (and interrupts)
                     </textarea>
                 </section>
             </div>

@@ -288,10 +288,25 @@ While we've discussed the Composite *kernel*, it is important to understand the 
 This includes the libraries we use to abstract kernel resources and operations, and the components that provide the policies.
 
 You can see the *evolution* of some of these policies by comparing:
-- version 3: supporting only bump-pointer allocations
-- version 4 (in progress): supporting allocations and deallocations anywhere in a range of the capability namespace
+- version 3: supporting only bump-pointer allocations.
+- version 4 (in progress): supporting allocations and deallocations anywhere in a range of the capability namespace.
 
-To inspire your reading of the code, [Composite as an industrial song](https://github.com/user-attachments/assets/a99bf496-6185-43f4-bee7-e547ca636381) (also found in `resources/Capability\'s\ Cage.mp3`) to lull you to sleep while thinking about capabilities (thanks Sean & Sonu).
+Higher-level operations on Components through the `crt`, Composite RunTime library:
+- Creating components from elf binaries,
+- Creating synchronous invocations between them, and
+- Creating threads in components.
+
+Scheduling with the `slm` (Scheduling Library, Minimized -- version 2 of a scheduling library):
+- Enabling scheduler plugin policies,
+- Synchronization around critical sections, and
+- Handling timer interrupts.
+
+While it would be difficult to understand many of the components as they require more context, the Capability and Memory Manager is one we've discussed in class quite a bit:
+- Allocating memory (e.g. providing the equivalent of `sbrk`),
+- Sharing memory, and
+- Creating threads.
+
+To inspire your reading of the code, [Composite as an industrial song](https://github.com/user-attachments/assets/a99bf496-6185-43f4-bee7-e547ca636381) (also found in `resources/Capability\'s\ Cage.mp3` - share with your friends!) to lull you to sleep while thinking about capabilities (thanks Sean & Sonu).
 
 ## 12: nova
 

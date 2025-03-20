@@ -287,7 +287,11 @@ Read through the code and try to understand and answer the following questions:
 While we've discussed the Composite *kernel*, it is important to understand the user-level abstractions of the system as most of the interesting policies in the system are defined in user-level components.
 This includes the libraries we use to abstract kernel resources and operations, and the components that provide the policies.
 
-To inspire your reading of the code, [Composite as an industrial song](resources/Capability\'s\ Cage.mp3) to lull you to sleep while thinking about capabilities (thanks Sean & Sonu).
+You can see the *evolution* of some of these policies by comparing:
+- version 3: supporting only bump-pointer allocations
+- version 4 (in progress): supporting allocations and deallocations anywhere in a range of the capability namespace
+
+To inspire your reading of the code, [Composite as an industrial song](resources/Capability\'s\ Cage.mp4) to lull you to sleep while thinking about capabilities (thanks Sean & Sonu).
 
 ## 12: nova
 

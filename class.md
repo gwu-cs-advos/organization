@@ -62,11 +62,11 @@ Please fill out the required form for deadlines by noon on the day of the deadli
 | R3.20 | specialization               |                                                                                                                           |
 | T3.25 | unikraft + nova              | [unikraft](https://github.com/gwu-cs-advos/organization/blob/main/class.md#10-unikraft)                                   |
 | R3.27 | composite                    |                                                                                                                           |
-| T4.01 | nova + nickel                | [composite libs](https://github.com/gwu-cs-advos/organization/blob/main/class.md#11-composite-libs)                       |
+| T4.01 | nova                         | [composite libs](https://github.com/gwu-cs-advos/organization/blob/main/class.md#11-composite-libs)                       |
 | R4.03 | interface & component design |                                                                                                                           |
-| T4.08 | nickel + komodo              | [nova](https://github.com/gwu-cs-advos/organization/blob/main/class.md#12-nova)                                           |
+| T4.08 | nova + nickel                | [nova](https://github.com/gwu-cs-advos/organization/blob/main/class.md#12-nova)                                           |
 | R4.10 | interface & component design |                                                                                                                           |
-| T4.15 | komodo                       | [nickel](https://github.com/gwu-cs-advos/organization/blob/main/class.md#13-nickel)                                       |
+| T4.15 | nickel + komodo              | [nickel](https://github.com/gwu-cs-advos/organization/blob/main/class.md#13-nickel)                                       |
 | R4.17 | security                     |                                                                                                                           |
 | T4.22 | komodo                       | [komodo](https://github.com/gwu-cs-advos/organization/blob/main/class.md#14-komodo)                                       |
 | R4.24 | close                        | [System Investigation](https://github.com/gwu-cs-advos/organization/blob/main/class.md#2-system-enhancement-andor-design) |

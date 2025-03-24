@@ -58,18 +58,18 @@ Please fill out the required form for deadlines by noon on the day of the deadli
 | R3.06 | interface design             | [UNIX Service](https://github.com/gwu-cs-advos/organization/blob/main/class.md#1-unix-service)                            |
 | T3.11 | Spring recess                |                                                                                                                           |
 | R3.13 | Spring recess                |                                                                                                                           |
-| T3.18 | composite scheduling         | [composite kernel](https://github.com/gwu-cs-advos/organization/blob/main/class.md#9-composite-kernel)                    |
+| T3.18 | unikraft + composite         | [composite kernel](https://github.com/gwu-cs-advos/organization/blob/main/class.md#9-composite-kernel)                    |
 | R3.20 | specialization               |                                                                                                                           |
-| T3.25 | unikraft                     | [unikraft](https://github.com/gwu-cs-advos/organization/blob/main/class.md#10-unikraft)                                   |
-| R3.27 | interface & component design |                                                                                                                           |
-| T4.01 | nova                         | [composite libs](https://github.com/gwu-cs-advos/organization/blob/main/class.md#11-composite-libs)                       |
+| T3.25 | unikraft + nova              | [unikraft](https://github.com/gwu-cs-advos/organization/blob/main/class.md#10-unikraft)                                   |
+| R3.27 | composite                    |                                                                                                                           |
+| T4.01 | nova + nickel                | [composite libs](https://github.com/gwu-cs-advos/organization/blob/main/class.md#11-composite-libs)                       |
 | R4.03 | interface & component design |                                                                                                                           |
-| T4.08 | komodo                       | [nova](https://github.com/gwu-cs-advos/organization/blob/main/class.md#12-nova)                                           |
+| T4.08 | nickel + komodo              | [nova](https://github.com/gwu-cs-advos/organization/blob/main/class.md#12-nova)                                           |
 | R4.10 | interface & component design |                                                                                                                           |
-| T4.15 | komodo + nickel              | [komodo](https://github.com/gwu-cs-advos/organization/blob/main/class.md#13-komodo)                                       |
+| T4.15 | komodo                       | [nickel](https://github.com/gwu-cs-advos/organization/blob/main/class.md#13-nickel)                                       |
 | R4.17 | security                     |                                                                                                                           |
-| T4.22 | nickel                       | [nickel](https://github.com/gwu-cs-advos/organization/blob/main/class.md#14-nickel)                                       |
-| R4.24 |                              | [System Investigation](https://github.com/gwu-cs-advos/organization/blob/main/class.md#2-system-enhancement-andor-design) |
+| T4.22 | komodo                       | [komodo](https://github.com/gwu-cs-advos/organization/blob/main/class.md#14-komodo)                                       |
+| R4.24 | close                        | [System Investigation](https://github.com/gwu-cs-advos/organization/blob/main/class.md#2-system-enhancement-andor-design) |
 
 # Systems
 
@@ -286,35 +286,133 @@ Read through the code and try to understand and answer the following questions:
 
 While we've discussed the Composite *kernel*, it is important to understand the user-level abstractions of the system as most of the interesting policies in the system are defined in user-level components.
 This includes the libraries we use to abstract kernel resources and operations, and the components that provide the policies.
+Remember that the kernel is quite hard to use: you have to use retyping syscalls to even be able get the memory to back capability and page-tables *before* being able to populate them!
+The libraries in the system attempt to abstract some of this complexity.
 
-You can see the *evolution* of some of these policies by comparing:
-- version 3: supporting only bump-pointer allocations.
-- version 4 (in progress): supporting allocations and deallocations anywhere in a range of the capability namespace.
+Higher-level operations on Components through the `crt`, [Composite RunTime library](https://github.com/gwsystems/composite/blob/v4/src/components/lib/crt/crt.h):
+- [Creating components](https://github.com/gwsystems/composite/blob/v4/src/components/lib/crt/crt.h#L167) from elf binaries (see the `elf_hdr` argument),
+- [Creating synchronous invocations](https://github.com/gwsystems/composite/blob/v4/src/components/lib/crt/crt.h#L187) between them, and
+- [Creating threads](https://github.com/gwsystems/composite/blob/v4/src/components/lib/crt/crt.h#L201) in components.
 
-Higher-level operations on Components through the `crt`, Composite RunTime library:
-- Creating components from elf binaries,
-- Creating synchronous invocations between them, and
-- Creating threads in components.
+Scheduling with the `slm` (Scheduling Library, Minimized -- version 2 of a [scheduling](https://github.com/gwsystems/composite/blob/v4/src/components/lib/slm/slm_api.h) [library](https://github.com/gwsystems/composite/blob/v4/src/components/lib/slm/slm.h)):
+- Enabling scheduler plugin policies for [scheduling](https://github.com/gwsystems/composite/blob/v4/src/components/lib/slm/fprr.c) and [timer management](https://github.com/gwsystems/composite/blob/v4/src/components/lib/slm/quantum.c),
+- Synchronization within the scheduler around a per-core [critical section](https://github.com/gwsystems/composite/blob/v4/src/components/lib/slm/slm.h#L196-L298), and
+- Handling [timer interrupts](https://github.com/gwsystems/composite/blob/v4/src/components/lib/slm/slm.c#L470-L569).
 
-Scheduling with the `slm` (Scheduling Library, Minimized -- version 2 of a scheduling library):
-- Enabling scheduler plugin policies,
-- Synchronization around critical sections, and
-- Handling timer interrupts.
-
-While it would be difficult to understand many of the components as they require more context, the Capability and Memory Manager is one we've discussed in class quite a bit:
+While it would be difficult to understand many of the components as they require more context, the [Capability and Memory Manager](https://github.com/gwsystems/composite/blob/v4/src/components/implementation/capmgr/simple/capmgr.c) is one we've discussed in class quite a bit:
 - Allocating memory (e.g. providing the equivalent of `sbrk`),
 - Sharing memory, and
 - Creating threads.
 
 To inspire your reading of the code, [Composite as an industrial song](https://github.com/user-attachments/assets/a99bf496-6185-43f4-bee7-e547ca636381) (also found in `resources/Capability\'s\ Cage.mp3` - share with your friends!) to lull you to sleep while thinking about capabilities (thanks Sean & Sonu).
 
+Questions:
+
+1. What are the core abstractions provided by the scheduling library?
+2. What thoughts do you have on the similarities and differences of the `crt` interface versus something more conventional (like `fork`, `exec`, `pipe`, etc...).
+
 ## 12: nova
 
 VMs are an integral and essential part of modern infrastructure.
 Even serverless offers that try and abstract away from the core hardware completely rely entirely on VMs (see Firecracker).
 
-## 13: komodo
-## 14: nickel
+For this, and the next code review, we're going to dive into Nova.
+The [Nova](http://hypervisor.org/eurosys2010.pdf) [hypervisor](http://hypervisor.org/) is a L4-lineage microkernel that uses IPC based on synchronous IPC between threads.
+It supports virtualization (e.g. of Linux) by using hardware virtualization extensions (called VMX in Intel chips, and SVM in AMD chips).
+These hardware extensions enable a VM to be executed without trapping from the VM into the kernel for most operations.
+For example, the hardware extensions enable
+
+1. the VM to have its own version of page-tables, thus to perform address virtualization without interacting with the real kernel (they hypervisor of the VMM), and
+2. the execution of a virtual user-level and kernel-level, and transitions between these modes (i.e. system calls, and exceptions) can proceed without trapping to the hypervisor.
+
+In short, the hardware support makes many of the hardware's normal facilities be directly accessed and programmed within the VM.
+However, some actions within the VM do cause traps outside of the VM.
+These traps might be due to a request for I/O (to a virtualized device), or due to an access to a "physical page" that the hypervisor doesn't have a mapping for (e.g. if we're providing 1GiB RAM for the VM, and the VM accesses a physical address at 1.5GiB).
+Nova transforms these traps into IPC to a server, than can handle the trap!
+Thus, a normal server will handle VM traps, thus can provide virtualized I/O for the VM!
+
+I'd like you to demystify the hardware interface for virtualization.
+Much of the Intel support is in the corresponding [files](https://github.com/gwu-cs-advos/NOVA/blob/arm/inc/x86_64/vmx.hpp) for [VMX](https://github.com/gwu-cs-advos/NOVA/blob/arm/src/x86_64/vmx.cpp).
+
+The [specification](https://github.com/gwu-cs-advos/NOVA/blob/arm/doc/specification.pdf) for Nova provides quite a bit documentation that might be helpful for you.
+
+Questions:
+
+- Nova has one of the fastest IPC implementations.
+	Give me a summary of the flow of control through the system for a pair of `call` (from the client), and `reply` (to "reply & wait" from the server).
+	What do you think makes this implementation so efficient?
+- Nova uses hardware virtualization, e.g. VMX.
+	What is your *rough* sense of how this hardware works, and how it interacts with the system?
+
+References:
+
+- Find the [list of system calls](https://github.com/gwu-cs-advos/NOVA/blob/arm/src/x86_64/syscall.cpp#L546-L564).
+- The NOVA equivalent of [call](https://github.com/gwu-cs-advos/NOVA/blob/arm/src/x86_64/syscall.cpp#L111-L138) and [reply & wait](https://github.com/gwu-cs-advos/NOVA/blob/arm/src/x86_64/syscall.cpp#L171-L184).
+- The [`ret_user_sysexit`](https://github.com/gwu-cs-advos/NOVA/blob/arm/src/x86_64/ec.cpp#L155) is some assembly to simply return from kernel-level to user-level.
+	It is the "return" part of a system call.
+- Some acronyms:
+
+	- EC = execution context (e.g. thread!)
+	- UTCB = user-level thread control block which is region of memory shared by user-level and the kernel that can hold, for example, arguments to an IPC -- and generally, a set of registers.
+	- FPU = floating point unit -- the hardware that lets you do floating point computation (e.g. `float` and `double`).
+	- `cont` in an EC = a "continuation" that holds a function pointer to how to continue executing the thread when we try and switch back to it. An example: When we reply to a client's IPC request, the client's continuation is simply `ret_user_sysexit`, which (you guessed it!) simply returns to user-level to continue the client's computation post-`call`.
+	- An `rcap` is a "return capability" which is a capability that denotes the ability to return back to a client that is blocked `call`ing the server.
+		It is used to return control back to the client.
+	- `current` is the currently executing EC (thread).
+	- `Kobject`s are generic kernel objects (think the base-class for all kernel objects).
+
+## 13: nickel
+
+Nickel is a research OS that aims to guarantee the lack of *covert channels* between different processes that should not be able to communicate.
+Covert channels enable two processes that *should not be able to pass data (e.g. passwords)* to do so using implicit means.
+A simple example: if there's a single namespace that is shared between processes, it can (potentially) be used to pass information between processes.
+Imagine if there's a single process id, `pid` namespace.
+A bit (`0` or `1`) can be passed between processes as such:
+- At a specific time one process will create a process, then after a delay, will create a second process.
+- The other process that is "transmitting" information will create a process during the delay if it wants to pass a `1`, or avoid creating a process to pass `0`.
+- The first process will see the processes have pids `i` and `i+1` in the first case, and `i` and `i+2`
+
+Of course, it is possible that something else in the system creates a process within the delay, thus accidental interpreting the signal as a `0`.
+So all covert channel approaches need to filter out the signal from the noise (and there are algorithms for that).
+
+The focus of Nickel is how to create an OS without covert channels.
+The kernel has [architecture](https://github.com/gwu-cs-advos/nickel/tree/master/kernel) and [core code](https://github.com/gwu-cs-advos/nickel/tree/master/nikos2).
+In many ways, it is even simpler than `xv6`!
+
+Questions:
+
+1. How does Nickel allocate `pid`s to avoid covert channels?
+2. Where does Nickel use quotas, and how does it coordinate them when a process creates/spawns a new process?
+
+References:
+- Examples of how interfaces can cause covert channels are in Section 2 in [the paper](https://unsat.cs.washington.edu/papers/sigurbjarnarson-nickel.pdf).
+
+## 14: komodo
+
+Komodo is a security-focused system for running *enclaves*.
+Enclaves are execution environments that *do not trust the kernel that provides them resources*!
+The interface for the system is very simple: it focuses on enabling an application in the OS to create an enclave and run code in it.
+
+![Komodo API](resources/komodo_api.png)
+
+Parts of this API have strong similarities to the page-retyping we've discussed.
+The main author of the work was involved in a microkernel that indeed used user-level retyping of kernel memory!
+The OS APIs focus on creating the memory image for the enclave's execution, and `Finalise`-ing it, at which point the OS can no longer modify it.
+The enclave, when it boots up, makes sure that the environment it executes in is "as expected".
+That is to say, it uses the `Attest` and `Verify` calls to ensure that the memory the enclave has access to is the proper initial image, and the underlying page-table has the proper access rights.
+Note, this still enables the OS (and a process in the OS) to share memory with the enclave, thus communicate.
+
+You should read through the C code (there's Dafny code as well that provides a formal verification of the supervisor).
+
+Questions:
+
+1. What is your mental model for what the hierarchy of the system looks like?
+   What components are there (certainly, at least the Linux OS, and its processes)?
+   How are they organized?
+2. What are the types that frames can have, and why do you think that this enclave system uses frame (page) retyping?
+
+References:
+- If the code is hard to reverse engineer, Section 4 of [the paper](https://www.microsoft.com/en-us/research/wp-content/uploads/2017/10/komodo.pdf) might help.
 
 # Coding Projects
 

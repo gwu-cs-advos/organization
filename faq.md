@@ -690,3 +690,154 @@ RDMA is "remote DMA" which enables the DMA to and from memory on other, remote s
 
 Absolutely!
 Both systems are built around the communication mechanism being a core abstraction.
+
+## Unikraft
+
+> Are there known attacks on Unikernels? Are they actually more secure?
+
+They aren't running enough that is financially enticing enough for there to be attacks.
+There might be (search the CVEs for "unikernel"), but you can't really compare versus Linux that is run everywhere.
+
+> What's the performance benefit for Unikernels?
+
+See the [performance webpage](https://unikraft.org/docs/concepts/performance) (and associated papers).
+The memory size seems like around 1/2 that of a Linux system, which means that boot-time (e.g. for serverless startup) will be faster.
+It uses much less memory (Figure 4), and performance (Figure 5) is slightly faster than Linux running natively, and 2.68/1.54 times faster than Linux in a VM.
+So the performance benefit isn't astounding, but it is absolutely not nothing!
+
+> Is it useful to use unikraft on embedded systems?
+
+It could be.
+But most embedded RTOSes are doing what unikraft does, for their specific domain, already.
+
+> How does unikraft provide security?
+
+As they are only running a single application, there's no confidential information to protect!
+When trying to protect integrity and stop attackers from hacking the system, their argument would be that because the code is so much smaller and customized, it would be hard to compromise the system.
+The counter-argument is that the attack surface in a unikernel (the OS part) is part of the attack surface.
+This is compared to Linux where the OS is isolated from the applications, so it can only be attacked through controlled entry-points (syscalls), so the kernel doesn't add to the attack surface in as effective a way as unikraft.
+Which of these forces is more powerful?
+Is it more or less secure than Linux?
+Not sure.
+
+> Wow, there are a lot of libraries!
+> Do applications slow down a lot with more libraries?
+
+Modern systems simply use a lot of libraries.
+Check out `ls -1 /usr/lib | wc -l` which on my system outputs `126`.
+Adding more libraries doesn't necessarily slow things down, but it *does* enable applications to use only the code they require.
+If there were only a single library, there aren't options.
+If there are 100s of libraries, you can pick and choose only what you need.
+The downside is that you have to micro-manage 100s of libraries!
+In the end, the mass of code is what matters for overhead, not necessarily the number of libraries.
+
+> The `mmap` implementation seems to not really be functional.
+> Does this mean if an application wants to use `mmap`?
+
+Unikraft does *not* support all system calls, and I believe `mmap` is one of them!
+They very intentionally looked at Linux applications and asked "If I configure them intentionally, which system calls do I need to actually provide to produce functional systems?".
+They simply determined that the applications they require simply don't require `mmap`!
+So if you use `mmap`, you're SOL with Unikraft.
+An open question is **could** they provide `mmap` if they wanted to?
+I'd err toward "yes", but it might require a lot of infrastructure that might have net-negative performance impact: they'd have to run the whole system with page-tables, which they don't current require!!!
+
+> Given the libraries in Unikraft, is it a flat design, or a layered design?
+
+Specific libraries depend on other libraries, so it is layered or hierarchical (without isolation).
+
+> Why are macros used so much in Unikraft?
+
+Macros are simply a way to enable configuration (you can select which macro implementation to use to customize behavior) that can be slighly more flexible than functions.
+Macros don't require type signatures, which means that you can configure and play with type signatures when you use macros, and they can generate code that is inlined into the context of where the macro is used.
+This can be required for some features (see `COS_ERR_THROW` in Composite).
+Generally, we should stay away from macros, but they do serve useful purposes.
+
+> Customizability in unikraft seems similar to that of go.
+> How are they similar/different?
+
+`go` does enable some customizability, mainly focused around architectures.
+In contrast, Unikraft lets you customize much more functionality in the runtime system.
+A `go` *program* (not the runtime) can choose which libraries it wants to use.
+Unikraft enables this style of configurability, and spans that configurability all the way down to the OS, not just libraries at user-level.
+
+> How does Unikraft initialize the libraries at boot time given that there is no `init`?
+
+Unikraft is only running a single memory address space, so there is no `init` process, as you say.
+However, when the Unikraft system boots up, it executes all of the initialization code as part of its "boot up the OS" sequence of logic.
+So everything is initialized by the logic of the boot process in the system, and the final part of that "initialization" is to call the application's `main`!
+
+> How does Unikraft handle application updates?
+
+It doesn't!
+If you want to update the application, you'll have to update the VM that runs the unikraft system (i.e. shutdown the old version, and execute a new VM running the new application compiled with Unikraft).
+So it pushes updating to the VM-level.
+This is not as bad as it sounds, as many devops environments do "update" by simply pushing new containers which requires a VM or container reboot.
+
+> If you use an unmodified binary for a Linux application, how does Unikraft know which system calls it requires (thus which libraries to use)?
+
+It doesn't!
+It is on *you* as the system configurer to choose the features to support the application.
+If you don't compile in a system call that is required by the application, it should output an error, and enable you to rectify the situation.
+Not perfect, but you can run an application on Linux using `strace` (e.g. `strace ls`) to see which system calls the application makes.
+It isn't perfect because an application might use a system call when deployed that you might not have seen in your `strace` run.
+
+> Why can't we run binaries for other OSes as well?
+
+Nothing is fundamentally limiting this, but you'd have to have the logic to support the system calls of the other system.
+Hopefully, they could be implemented as libraries that could be configured into the system.
+
+> Is Unikraft like a container?
+
+No (but also, in some ways "kinda").
+A container can run many different processes at the same time, thus run `sshd` while running your specific application.
+Unikraft supports only a single application/process.
+So in that way, they are very different.
+However, containers often used as a representation of all of the software required to run an application.
+In that way, Unikraft is similar in that it does the same.
+However, containers enable all of that software to include many processes, thus support backwards compatibility much more seamlessly, and support debugging (through `sshd` and `gdb`) much more directly.
+
+> Unikraft doesn't enable you to configure the kernel, just libraries!
+
+There are conditional compilation facilities (`#ifdef`) in the kernel, which enables its customization, but certainly the focus on Unikraft is on configuration libraries.
+The interesting fact is that the kernel is very small, and it pushes most functionality into libraries (the memory allocation mechanisms, scheduling, FS, networking, etc...).
+So while it is technically correct that the focus is only on library configurability, the fact is that much of the system's functionality is in libraries.
+
+> Is kernel debloating different from Unikernels?
+> Are the outcomes different?
+
+A few things:
+- You cannot push debloating as far in Linux as in Unikraft because the kernel was not built with fine-grained configurability in mind.
+  However, Linux can be customized to a pretty high degree.
+- When choosing libraries in Unikraft, you're essentially customizing both the kernel and the application (library) code, so you're effectively debloating both.
+- Linux has the overheads of running processes, dual-mode execution, virtual memory, etc... that Unikraft does not.
+  In this sense, Unikraft aggressively assumes that we're only running a single application thus completely changes the *structure* of the system.
+  This is hard to replicate in Linux (though there are projects that try).
+
+In some sense, you can think about it like this:
+- The Linux debloating researcher are going in this direction:
+
+```mermaid
+flowchart LR
+	feat[Features]
+	min[Software Minimization]
+	feat ---> min
+```
+
+- The Unikernel people are doing the opposite:
+
+```mermaid
+flowchart LR
+	feat[Features]
+	min[Software Minimization]
+	min ---> feat
+```
+
+Can Unikernels support significant parts of the features that people care about in Linux, and still have better performance?
+If so, they might be interesting.
+
+> Why advertise running Unikraft in a container?
+> In that environment, wouldn't people just want to use a container directly for their application?
+
+Yes.
+This mystifies me as well.
+If they somehow got much better performance, maybe there's an argument, but this is strange.

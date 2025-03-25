@@ -253,7 +253,8 @@ The Composite kernel has a number of kernel resources,
 
 The source is organized as such:
 - The different [resources](https://github.com/gwsystems/composite/blob/v4/src/components/lib/cos/cos_consts.h#L109-L129).
-- The pages use the **retyping system** to be typed into the various [resources](https://github.com/gwsystems/composite/blob/v4/src/kernel/resources.c) of the kernel.- The different [capability types](https://github.com/gwsystems/composite/blob/v4/src/components/lib/cos/cos_consts.h#L14-L35).
+- The pages use the **retyping system** to be typed into the various [resources](https://github.com/gwsystems/composite/blob/v4/src/kernel/resources.c) of the kernel.
+- The different [capability types](https://github.com/gwsystems/composite/blob/v4/src/components/lib/cos/cos_consts.h#L14-L35).
 - The [*operations*](https://github.com/gwsystems/composite/blob/v4/src/components/lib/cos/cos_consts.h#L53-L79) that can be performed on capabilities that reference (name) those resources. These have logic that is generally defined in [cos.c](https://github.com/gwsystems/composite/blob/v4/src/kernel/cos.c). These include
   - Creating a [capability slot](https://github.com/gwsystems/composite/blob/v4/src/kernel/cos.c#L438-L459)
   - operations performed on [page-table nodes](https://github.com/gwsystems/composite/blob/v4/src/kernel/cos.c#L522-L597) such as mapping in memory, copying mappings, and [hooking](https://github.com/gwsystems/composite/blob/v4/src/kernel/cos.c#L583-L593) lower-levels in the page-table into higher-levels (and vice-versa).

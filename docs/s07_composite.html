@@ -1673,6 +1673,227 @@ frame_meta(b).refcnt++
 
 ---
 
+```mermaid
+block-beta
+	columns 3
+	block:C:3
+		columns 1
+		c0["C"]
+	end
+	block:K:3
+		columns 3
+		space
+		ct["<font color='blue'>captbl (logical)</font>"]
+		space
+		space
+		space
+		space
+		space
+		space
+		space
+		space
+		space
+		space
+		r0(["untyped"])
+		r1(["untyped"])
+		r2(["untyped"])
+	end
+
+	c0 --> ct
+	ct --> r0
+	ct --> r1
+	ct --> r2
+```
+
+---
+
+<div class="multicolumn">
+<div>
+
+```mermaid
+block-beta
+	columns 3
+	block:C:3
+		columns 1
+		c0["retype(cap1, FRAME_TYPE_CAPTBL_LVL1, ...)"]
+	end
+	block:K:3
+		columns 3
+		space
+		ct["<font color='blue'>captbl (logical)</font>"]
+		space
+		space
+		space
+		space
+		space
+		space
+		space
+		r0(["captbl (lvl 1)"])
+		space
+		space
+		space
+		r1(["untyped"])
+		r2(["untyped"])
+	end
+
+	c0 --> ct
+	ct --> r0
+	ct --> r1
+	ct --> r2
+```
+
+</div><div>
+
+
+```mermaid
+block-beta
+	columns 3
+	block:C:3
+		columns 1
+		c0["retype(cap0, FRAME_TYPE_CAPTBL_LVL0, ...)"]
+	end
+	block:K:3
+		columns 3
+		space
+		ct["<font color='blue'>captbl (logical)</font>"]
+		space
+		space
+		space
+		space
+		space
+		r1(["captbl (lvl 0)"])
+		space
+		r0(["captbl (lvl 1)"])
+		space
+		space
+		space
+		space
+		r2(["untyped"])
+	end
+
+	c0 --> ct
+	ct --> r0
+	ct --> r1
+	ct --> r2
+```
+
+
+</div></div>
+
+---
+
+<div class="multicolumn"><div>
+
+
+```mermaid
+block-beta
+	columns 3
+	block:C:3
+		columns 1
+		c0["construct(cap0, offset, cap1)"]
+	end
+	block:K:3
+		columns 3
+		space
+		ct["<font color='blue'>captbl (logical)</font>"]
+		space
+		space
+		space
+		space
+		space
+		r1(["captbl (lvl 0)"])
+		space
+		r0(["captbl (lvl 1)"])
+		space
+		space
+		space
+		space
+		r2(["untyped"])
+	end
+
+	c0 --> ct
+	ct --> r0
+	ct --> r1
+	ct --> r2
+	r1 --> r0
+```
+
+</div><div>
+
+
+```mermaid
+block-beta
+	columns 3
+	block:C:2
+		columns 1
+		c0["component_create(c0,...)"]
+	end
+	block C:1
+		c1["new"]
+	end
+	block:K:3
+		columns 3
+		space
+		ct["<font color='blue'>captbl (logical)</font>"]
+		space
+		space
+		space
+		space
+		space
+		r1(["captbl (lvl 0)"])
+		space
+		r0(["captbl (lvl 1)"])
+		space
+		space
+		space
+		space
+		r2(["untyped"])
+	end
+
+	c0 --> ct
+	ct --> r0
+	ct --> r1
+	ct --> r2
+	r1 --> r0
+	c1 --> r1
+```
+
+</div></div>
+
+---
+
+## Radix Trie Lookup
+
+$captbl(cap) \to capability/resource$
+
+Example:
+
+- Each captbl node (at level $l$) has 512 ($2^9$) entries
+- Assume a 2-level capability-table
+
+Different bits in `cap` used to index different levels
+- Bits[17-9] used to lookup in level 1
+- Bits[8-0] used to lookup in level 1
+
+---
+
+## Page-/Capability-Table Ops I
+
+Operations on capabilities to resource tables
+
+`construct(captop, capbot, offset)`
+- "hook" a level $n+1$ resource table into one of level $n$ at a specific offset
+
+```c
+t = captbl_lookup(ct, captop);
+b = captbl_lookup(ct, capbot);
+assert(lvl(t) = lvl(b) + 1);
+t[off] = b;
+frame_meta(b).refcnt++
+```
+
+---
+
 ## Page-/Capability-Table Ops II
 
 Operations on capabilities to resource tables

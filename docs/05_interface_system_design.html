@@ -32,7 +32,7 @@
                 
                 >
                     <textarea data-template>
-                        # Interface Design
+                        # Interface & System Design
 
 <div class="center">
 
@@ -58,9 +58,8 @@
 ## Generality vs. Specificity
 
 General, thin interfaces for deep interfaces can be polymorphic
-- Hide more details $\to$ more potential implementations
-- Multiple implementations
-- Component dependencies are on *interfaces*
+- Hide more details $\to$<br>more potential implementations
+- Component dependencies are on *interfaces* $\to$<br>specialize implementation behind interface
 
 ---
 
@@ -82,11 +81,11 @@ Techniques
 
 Virtual File System API (VFS) and/or [9P](http://man.cat-v.org/plan_9/5/intro)
 - OPs: open, read, write, close, creat, unlink, lseek, ...
-- Polymorphic: pipe, file, socket, ...
+- Polymorphism: pipe, file, socket, ...
 
 [CRUD](https://en.wikipedia.org/wiki/Create,_read,_update_and_delete) (create, read, update, delete)/REST
 - OPs: GET, PUT, DELETE, POST, PATCH
-- Polymorphic: cached, static webpage, dynamic webpage
+- Polymorphism: cached, static webpage, dynamic webpage
 
 ---
 
@@ -150,6 +149,11 @@ s2 = strtok_r(NULL, " ", &saved_position);
 ---
 
 ## Composition: Locks Don't Compose
+
+- recursively taking the same lock
+- deadlock due to ordering of taking different locks
+
+---
 
 ```c [1-19|22-23|26-35|37-41|43-51|53-66]
 void
@@ -312,7 +316,7 @@ Simple systems, complex behavior:
 
 UNIX commands:
 - Programs w/ text input/output, composed with `|`
-- `$ cat classlist | grep "gwu.edu" | wc -l` - how many students in class?
+- `$ cat classlist | grep "gwu.edu" | awk '{print $1;}' | llm "Choose a funny variant on each name"` - Funny classlist
 
 ---
 
@@ -496,7 +500,7 @@ flowchart TB
 subgraph _
 c["App"]
 end
-subgraph ___
+subgraph __
 a["AppSrvFS"]
 end
 

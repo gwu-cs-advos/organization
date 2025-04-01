@@ -32,7 +32,7 @@
                 
                 >
                     <textarea data-template>
-                        # Interface and Component Design
+                        # Interface Properties
 
 <div class="center">
 
@@ -200,6 +200,8 @@ Component state relevant for $c_i$ can be updated by
 2. client requests from $c_j, i \neq j$, and/or
 3. interactions with lower-level (server) components.
 
+Example: `read` from a file
+
 ---
 
 ## Concurrency in Implementations
@@ -207,6 +209,8 @@ Component state relevant for $c_i$ can be updated by
 Mechanisms:
 - *Correctness* - locks, lock-free data-structures
 - *Thread interactions* - condition variables, semaphores
+
+Example: KV-store where you can wait for a specific key
 
 ---
 
@@ -257,6 +261,8 @@ Implementation must consider:
 - avoid cross-client serialization/lock delays?
 - shared namespaces/shared resources makes this hard
   - example with separate namespaces
+
+What are the *interface properties* that enable this?
 
 ---
 
@@ -312,9 +318,9 @@ kv_put(key_t k, value_t v)
 ## Blocking vs. Non-blocking
 
 Can a thread *block* when it invokes an interface in a function?
-1. Block on a lock?
+1. Can the thread block awaiting some more complicated event, potentially forever!
+2. Block on a lock?
    So long as it is a lock with *progress guarantees*, we don't count this as "blocking".
-2. Can the thread block awaiting some more complicated event, potentially forever!
 
 ---
 
@@ -366,7 +372,7 @@ nonblocking(res_t r1, res_t r2)
 Generally:
 - What **events** does a component define?
 - What *triggers* those **events**?
-- How does how does one *await* (or block on) an **event**?
+- How does one *await* or block on a (or a set of) **event**(s)?
 
 ---
 
@@ -717,20 +723,59 @@ Returns an `fd`, which we can add to the event fd!!!
 
 ---
 
-```c []
-fd = timerfd_create(CLOCK_REALTIME, 0);
+```c [1-8|10-13|15-17|19-21|26-27|29-33|35]
+tfd = timerfd_create(CLOCK_REALTIME, 0);
 struct itimerspec  now;
 clock_gettime(CLOCK_REALTIME, &now);
 struct itimerspec  new_value = (struct itimerspec) {
 	.it_value.tv_sec = now.tv_sec + atoi(argv[1]),
     .it_value.tv_nsec = now.tv_nsec,
 };
-timerfd_settime(fd, TFD_TIMER_ABSTIME, &new_value, NULL);
+timerfd_settime(tfd, TFD_TIMER_ABSTIME, &new_value, NULL);
 
-struct epoll_event evts[16];
-epoll_ctl(event_fd, EPOLL_CTL_ADD, fd, NULL);
-epoll_wait(event_fd, evts, 16, -1);
+struct epoll_event evt_data;
+int event_fd = epoll_create(1);
+evt_data.data.fd = tfd;
+epoll_ctl(event_fd, EPOLL_CTL_ADD, tfd, &evt_data);
+
+/* previously opened socket, e.g. on port 80 */
+evt_data.data.fd = MAIN_SOCKET;
+epoll_ctl(event_fd, EPOLL_CTL_ADD, MAIN_SOCKET, &evt_data);
+
+while (1) {
+	struct epoll_event evts[16];
+	nevts = epoll_wait(event_fd, evts, 16, -1);
+	for (i = 0; i < nevts; i++) {
+		int efd = evts[i].data.fd;
+
+		/* events returned in evts */
+		if (efd == tfd) {
+			handle_timer();
+		} else if (efd == MAIN_SOCKET) {
+			struct epoll_event socket_evt;
+
+			fd = accept(MAIN_SOCKET);
+			socket_evt.data.fd = fd;
+			epoll_ctl(event_fd, EPOLL_CTL_ADD, fd, &socket_evt);
+		} else {
+			handle_client(efd);
+		}
+	}
+}
 ```
+
+---
+
+## Event Management Summary
+
+APIs
+- Edge-triggered: notification on update
+- Level-triggered: Ask for state of all fds
+
+Composition
+- Modern Linux enables fd-based access to most resources
+  - memory, timers, processes, events, signals, ...
+- Enables composition with event management
 
 ---
 
@@ -763,7 +808,7 @@ Assumptions
 
 - $\circ$ = component execution
 - $f$ = interface function (e.g. syscall) w/ specific set of arguments
-- $f \circ g$ = execute $f$,then $g$
+- $f \circ g$ = execute $f$,then $g$, result is the system state
 
 ---
 
@@ -785,6 +830,7 @@ Are operations *order invariant* and can be implemented scalably?
 
 </div><div>
 
+- System state is the same after each
 - Operations aren't strictly related
 - Any order of execution of operations is permissible
 
@@ -797,24 +843,94 @@ Are operations *order invariant* and can be implemented scalably?
 **Scalability** -
 An operation's logic doesn't impact another's.
 
-- They modify not shared state -- no locks!
-- They should be able to execute independently -- scalably.
+- They modify no shared state - no locks!
+- They should be able to execute independently - scalably.
+
+---
+
+## Commutivity Example
+
+POSIX cannot be implemented scalably as `fd` allocation is not commutative
+> A new `fd` should have the lowest available unused `fd` id.
+
+So `dup` will always allocate into the lowest `fd`.
+- Example from `xv6`
+
+---
+
+```c [3|5,6,12,13]
+	case PIPE:
+		pcmd = (struct pipecmd *)cmd;
+		if (pipe(p) < 0) panic("pipe");
+		if (fork1() == 0) {
+			close(1);
+			dup(p[1]);
+			close(p[0]);
+			close(p[1]);
+			runcmd(pcmd->left);
+		}
+		if (fork1() == 0) {
+			close(0);
+			dup(p[0]);
+			close(p[0]);
+			close(p[1]);
+			runcmd(pcmd->right);
+		}
+		close(p[0]);
+		close(p[1]);
+		wait(0);
+		wait(0);
+		break;
+```
+
+---
+
+## `fd` Allocation not Commutative
+
+Core 0: `fd0 = dup(...)`
+Core 1: `fd1 = dup(...)`
+
+Either can be true:
+- `fd0 < fd1`
+- `fd1 < fd0`
+
+Must be a lock *serializing* the allocation!
+
+---
+
+## Modern Linux
+
+1. `dup2` to choose the `fd`
+2. Ignore POSIX!!!
 
 ---
 
 ## Associativity
 
-Can operations be *parallelized*?
+Does the order in which we apply related operations impact the result?
+
+No: *Associative*
 
 $f \circ g \circ h \circ i = (f \circ g) \circ (h \circ i)$
 - parallel execution of $f \circ g$ and $h \circ i$
 
+---
+
 Examples:
-- $\textsf{block_read}(b); \textsf{block_read}(b'); \textsf{block_read}(b'')$
-- Same for $\textsf{block_write}$
-- Same for $\textsf{block_read}$ & $\textsf{block_write}$ where $b \neq b' \neq b''$
-- $(\textsf{block_read}(b); \textsf{block_read}(b');) \textsf{block_write}(b) \neq$
-  $\textsf{block_read}(b); (\textsf{block_read}(b'); \textsf{block_write}(b))$
+- Key-value stores are associative:
+  - ordering of operations only on put$\to$get `kv_put(k, ...); kv_get(k)`
+- DB reads are associative, write$\to$read operations aren't
+  - Replicated readers w/ single writer
+- Stacks and queues are *not* associative:
+  - order of push/pop/enqueue/dequeue changes output
+
+Parallel/distributed KVs are common, not so much queue/stack
+
+<!-- - $\textsf{block_read}(b); \textsf{block_read}(b'); \textsf{block_read}(b''), b \neq b' \neq b''$ -->
+<!-- - Same for $\textsf{block_write}$ -->
+<!-- - Same for $\textsf{block_read}$ & $\textsf{block_write}$ with any $b, b', b''$ -->
+<!-- - $(\textsf{block_read}(b); \textsf{block_read}(b');) \textsf{block_write}(b) \neq$ -->
+<!--   $\textsf{block_read}(b); (\textsf{block_read}(b'); \textsf{block_write}(b))$ -->
 
 ---
 

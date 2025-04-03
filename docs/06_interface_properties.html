@@ -791,24 +791,50 @@ Composition
 
 ## The Maths
 
-Properties over *functions*
+Properties over *function* "$\circ$"
 | Property | | Constraints |
 |----------|--:| -------------|
 | Commutativity | $\forall f, g,$ | $f \circ g = g \circ f$ |
-| Associativity | $\forall f, g, h,$ | $(f \circ (g \circ h)) = ((f \circ g) \circ h)$ |
-| Idempotency | $\forall f,$ | $ f \circ f = f$ |
+| Associativity | $\forall i, j, k,$ | $(i \circ (j \circ k)) = ((i \circ j) \circ k)$ |
+| Idempotency | $\forall h,$ | $ h \circ h = h$ |
 
-Potentially for only specific $f$, $g$, and $h$
+- $f, g, h$ - system calls
+- $i, j, k$ - system calls with inputs in a shared namespace
 
 ---
 
-## What Does it Mean?
+## Applied to System *Interfaces*
 
-Assumptions
+Definitions
 
-- $\circ$ = component execution
+- $\circ $ = system (a component) with some state
 - $f$ = interface function (e.g. syscall) w/ specific set of arguments
-- $f \circ g$ = execute $f$,then $g$, result is the system state
+- $f, g, h$ are separate *functions* (or functions with different arguments) in a system's interface
+
+---
+
+## Applied to System *Interfaces* II
+
+Interpretation:
+
+- $f \circ g \triangleq$ "System executes $f$ then $g$"
+  - each of $f$ & $g$ return appropriate values, and
+  - $f$'s execution is reflected in system state
+  - **execution ordering**
+- $f \circ (g \circ h) \triangleq$ "$g$ & $h$ apply changes to shared namespace, the output of which is combined with $f$'s changes"
+  - **order of data combination**
+
+---
+
+## Applied to System *Interfaces* III
+
+"Do system call `write` and `read` commute?"
+- can they be reordered, and return the same values?
+
+"Do system calls `pwrite` on **disjoint portions** of a file associate?"
+- can these be executed in any order and the state combined identically?
+
+"Do system calls `pwrite` on **any portion** of a file associate?"
 
 ---
 
@@ -820,13 +846,13 @@ Are operations *order invariant* and can be implemented scalably?
 
 | core 0        | core 1        |
 |---------------|---------------|
-| 1: $\textsf{op}(...)$ | 1: $\textsf{op}(...)$ |
+| 1: $\textsf{f}(...) \to r_0$ | 1: $\textsf{f}(...) \to r_1$ |
 | | |
-|  | 1: $\textsf{op}(...)$ |
-| 2: $\textsf{op}(...)$ | |
+|  | 1: $\textsf{f}(...) \to r_0$ |
+| 2: $\textsf{f}(...) \to r_1$ | |
 | | |
-|1: $\textsf{op}(...)$ | |
-| | 2: $\textsf{op}(...)$|
+|1: $\textsf{f}(...) \to r_0$ | |
+| | 2: $\textsf{f}(...) \to r_1$|
 
 </div><div>
 
@@ -907,9 +933,9 @@ Must be a lock *serializing* the allocation!
 
 ## Associativity
 
-Does the order in which we apply related operations impact the result?
+Does the order in which we apply data updates of related operations impact the result?
 
-No: *Associative*
+No? $\to$ *Associative*
 
 $f \circ g \circ h \circ i = (f \circ g) \circ (h \circ i)$
 - parallel execution of $f \circ g$ and $h \circ i$
@@ -917,7 +943,7 @@ $f \circ g \circ h \circ i = (f \circ g) \circ (h \circ i)$
 ---
 
 Examples:
-- Key-value stores are associative:
+- Key-value `get`s are associative:
   - ordering of operations only on put$\to$get `kv_put(k, ...); kv_get(k)`
 - DB reads are associative, write$\to$read operations aren't
   - Replicated readers w/ single writer

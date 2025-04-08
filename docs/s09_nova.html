@@ -181,7 +181,13 @@ At some point, the VM will do something that the hardware can't handle
 VMX uses virtual versions of a lot of hardware resources
 
 - enables direct access to them!
-- registers, IDT, Page-table base register (`cr3`)
+- registers, IDT
+- Nested page-tables! per-VM page-table base register (`cr3`)
+- *virtual* user and kernel-level
+
+---
+
+## Why VMX?
 
 Traps to the hypervisor (VMEXIT) on everything it cannot virtualize
 

@@ -856,3 +856,82 @@ The VMX hardware is multiplexed by the OS.
 Each VM requires a VMCS (VM Control Structure) page to control the VM per virtual core in the VM.
 When the OS executes VMLAUNCH or VMRESUME, it will load the contents of the VMCS that is an argument to the instruction, thus loading the contents for that specific VM's core.
 As such, the kernel can decide which VM's (cores's) VMCS at any point, thus multiplexing the hardware.
+
+> What is a VCPU and how does it differ from a global thread?
+
+While normal hardware has a fixed number of cores defined by the hardware, virtual hardware can be more flexible.
+Each VM believes it is running in a specific number of CPUs that we call VCPUs (virtual CPUs).
+VMs can have fewer VCPU than there are cores, in which case multiple VMs might be able to, together, use all the cores.
+VMs might have more VCPUs than cores on the system in which case the hypervisor must multiplex the cores amongst the VM's VCPUs.
+
+> What is the EC and SC?
+
+An Execution Context (EC) is all that is required to capture the register and other state of a thread that is in the process of conducting IPC, with the intention of later restoring it.
+A Scheduling Context (SC) is the scheduling-specific state associated with a thread (priority and accounting information).
+Most systems will simply keep the SC information in the thread structure.
+Nova separates it so that a server thread can use the SC of the client thread.
+This implements a version of Scheduling Inheritance.
+
+> What the heck is a continuation?
+
+In `libuv` we saw the callback functions that were being passed around everywhere.
+We didn't focus on it at the time, but every time they were passed around there was also a `void *` that was passed with them.
+This means they captured the function to call, and the state to pass to that function to *continue* the current execution (after an event happens).
+So a *continuation* is generally the function and state that should be executed later to resume a computation's logic.
+
+> What are CR0 and CR4?
+
+These are *control registers* on x86.
+Both of these control registers generally have bits that configure (or turn on/off) specific features.
+For example, there's a bit that enables paging, a bit that enables 64 bit computations, etc...
+
+> What happens if a VMM handler crashes?
+
+The VM did a VMEXIT to the hypervisor (kernel), and it used IPC to activate the VMM.
+If the VMM fails, certainly the VM it oversees is in a very very bad spot.
+It is likely that whichever process created the VMM would be notified and then would use *capability revocation* to reclaim all of the VMM's resources, which would, as a side-effect revoke all VM resource as well.
+
+> Are ECs not just threads?
+
+Each thread has an EC, but the ECs are tracked separately as there are various types of ECs.
+Is the thread a VM thread, thus did a VMEXIT, so the EC has to track VMCS state?
+Or was a normal thread that simply did a system call, thus the EC tracks only registers.
+An EC is an abstraction over execution state specific to what needs to be saved/restored.
+
+> How does NOVA ensure atomicity between a VMEXIT, and converting it into IPC?
+
+Simple: The kernel is run with interrupts disabled in this path, and VMCS are bound to a specific core (the core the IPC is happening on).
+So interrupts cannot threaten atomicity, and other cores cannot either.
+
+> Can NOVA overcommit cores or memory to VMs?
+
+Yes!
+
+> How does the make_current function work with `mov %0, %%cr3" : : "r" (val | pcid) : "memory"`?
+
+The PCID is what is commonly know as an Address Space ID.
+Each process has a separate PCID, and this line of assembly both loads the page-table of the next thread (`val`) *and* loads the thread's PCID.
+When the VM/thread accesses virtual memory, each of its TLB entrys will be "tagged" with the PCID, and can only access entries with that specific PCID's tag.
+This means that so long as no two threads have the same PCID, you never need to flush the TLB!!!
+
+> At some point, adding all of these C++ abstraction layers impacts performance, right?
+
+Not necessarily.
+Most of the abstractions heavily use templating, which generates specialized code at compile time.
+One place where the Nova design *does* have some overhead is in the use of all the callback functions -- each of which, when called, can create a control dependency on data (to figure out where to jump, the pointer must be read in), which can slow things down in some cases.
+
+> How can VMX trap in the guest kernel without trapping to the host?
+
+*Within* the guest VM, there is a user-level and a kernel-level.
+VMX provides this illusion.
+This is simply tracked with a bit in CR0 (if memory serves me).
+So if the VM is running with that bit set to user-mode, the hardware will provide the normal user-level properties (can't execute sensitive instructions, can't access pages marked as not user-accessible).
+When user-mode makes a system call (using the normal instruction), VMX implements this by switching the bit in CR0, and executing the VM's kernel's system call.
+
+None of the above requires a VMEXIT into the hypervisor.
+The VMX hardware emulates a full user/kernel environment!
+
+> Is NOVA deployed anywhere?
+
+It was used by Intel in a cloud it was running.
+Now it is used by the company Bedrock as the core of their offering.

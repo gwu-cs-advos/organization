@@ -841,3 +841,18 @@ If so, they might be interesting.
 Yes.
 This mystifies me as well.
 If they somehow got much better performance, maybe there's an argument, but this is strange.
+
+## `nova`
+
+> Why are there so many saves in the IPC path?
+
+When doing a system call, you always save and restore registers on entry to the system call and exit.
+But the registers might need to be saved and restored in different ways: on x86-64, when you have a `syscall` instrution (and are going to use the corresponding `sysret` in the future, you know (by definition of the instructions) that the `r11`, `rdx` and `rcx` registers cannot store user-data because they are overwritten.
+This means that you need to save/restore registers differently depending on if you entered the kernel via a `syscall`, and interrupt, or a VMEXIT.
+
+> With multiple VMs running in the system, how does the system differentiate their resources?
+
+The VMX hardware is multiplexed by the OS.
+Each VM requires a VMCS (VM Control Structure) page to control the VM per virtual core in the VM.
+When the OS executes VMLAUNCH or VMRESUME, it will load the contents of the VMCS that is an argument to the instruction, thus loading the contents for that specific VM's core.
+As such, the kernel can decide which VM's (cores's) VMCS at any point, thus multiplexing the hardware.

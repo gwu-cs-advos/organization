@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+
+        
+
+        <link rel="stylesheet" href="assets/reveal-js/dist/reveal.css" />
+
+        
+            <link rel="stylesheet" href="assets/theme.css" />
+        
+        
+            <link rel="stylesheet" href="assets/nord.css" />
+        
+
+        
+            
+        
+            
+        
+    </head>
+    <body>
+        <div class="reveal">
+            <div class="slides">
+                <section data-markdown
+                
+                    data-separator-vertical="^\s*-v-\s*$"
+                
+                    data-separator-notes="^Notes?:"
+                
+                >
+                    <textarea data-template>
+                        # Nova and Virtualization
+
+<div class="center">
+
+**Gabe Parmer**
+
+© Gabe Parmer, 2025, All rights reserved
+
+</div>
+
+---
+
+## $\mu$-kernel for Virtualization
+
+---
+
+## IPC
+
+Sync Rendezvous Between Threads
+
+- Switching between threads for IPC
+
+---
+
+```cpp [1-9|11|14-21|25|17|28-38|15|40-49|58-60|16|51-56|67-68|83|86-99|91]
+void Ec::sys_call()
+{
+    Sys_call *s = static_cast<Sys_call *>(current->sys_regs());
+    Kobject *obj = Space_obj::lookup (s->pt()).obj();
+
+    if (EXPECT_FALSE (!obj || obj->type() != Kobject::PT))
+        sys_finish<Sys_regs::BAD_CAP>();
+    Pt *pt = static_cast<Pt *>(obj);
+    Ec *ec = pt->ec;
+
+    if (EXPECT_FALSE (current->cpu != ec->xcpu))
+        sys_finish<Sys_regs::BAD_CPU>();
+
+    if (EXPECT_TRUE (!ec->cont)) {
+        current->cont = ret_user_sysexit;
+        current->set_partner (ec);
+        ec->cont = recv_user;
+        ec->regs.set_pt (pt->id);
+        ec->regs.set_ip (pt->ip);
+        ec->make_current();
+    }
+
+    if (EXPECT_TRUE (!(s->flags() & Sys_call::DISABLE_BLOCKING)))
+        ec->help (sys_call);
+    sys_finish<Sys_regs::COM_TIM>();
+}
+
+void Ec::recv_user()
+{
+    Ec *ec = current->rcap;
+
+    ec->utcb->save (current->utcb);
+
+    if (EXPECT_FALSE (ec->utcb->tcnt()))
+        delegate<true>();
+
+    ret_user_sysexit();
+}
+
+void Ec::ret_user_sysexit()
+{
+    mword hzd = (Cpu::hazard | current->regs.hazard()) & (HZD_RECALL | HZD_STEP | HZD_RCU | HZD_FPU | HZD_DS_ES | HZD_SCHED);
+    if (EXPECT_FALSE (hzd))
+        handle_hazard (hzd, ret_user_sysexit);
+
+    asm volatile ("lea %0, %%rsp;" EXPAND (LOAD_GPR RET_USER_HYP) : : "m" (current->regs) : "memory");
+
+    UNREACHED;
+}
+
+inline void set_partner (Ec *p)
+{
+    partner = p;
+    partner->rcap = this;
+    Sc::ctr_link++;
+}
+
+void Ec::sys_reply()
+{
+    Ec *ec = current->rcap;
+
+    if (EXPECT_TRUE (ec)) {
+        Utcb *src = current->utcb;
+
+        bool fpu = false;
+
+        if (EXPECT_TRUE (ec->cont == ret_user_sysexit))
+            src->save (ec->utcb);
+        else if (ec->cont == ret_user_iret)
+            fpu = src->save_exc (&ec->regs);
+        else if (ec->cont == ret_user_vmresume)
+            fpu = src->save_vmx (&ec->regs);
+        else if (ec->cont == ret_user_vmrun)
+            fpu = src->save_svm (&ec->regs);
+
+        if (EXPECT_FALSE (fpu))
+            current->transfer_fpu (ec);
+
+        if (EXPECT_FALSE (src->tcnt()))
+            delegate<false>();
+    }
+
+    reply();
+}
+
+void Ec::reply (void (*c)())
+{
+    current->cont = c;
+
+    if (EXPECT_FALSE (current->glb))
+        Sc::schedule (true);
+
+    Ec *ec = current->rcap;
+
+    if (EXPECT_FALSE (!ec || !ec->clr_partner()))
+        Sc::current->ec->activate();
+
+    ec->make_current();
+}
+```
+
+---
+
+## VM Hardware
+
+[VMCS - VM Control Structure](https://rayanfam.com/assets/files/VMCS.pdf)
+
+- One of these per Virtual Core
+
+VMLAUNCH/VMRESUME instructions
+
+- Take a VMCS as an argument -- the VM context to run on the CPU!
+
+At some point, the VM will do something that the hardware can't handle
+
+- VMEXIT! trap to the kenrel, populating the VMCS with registers and other machine state
+
+---
+
+## Why VMX?
+
+VMX uses virtual versions of a lot of hardware resources
+
+- enables direct access to them!
+- registers, IDT, Page-table base register (`cr3`)
+
+Traps to the hypervisor (VMEXIT) on everything it cannot virtualize
+
+- Programming timer
+- Doing I/O
+
+Hypervisor can select for some operations if they should be virtualized
+
+- `rdtsc`
+
+---
+
+## Nova Interface to VMX
+
+Treat a VM as a process
+
+- VMEXIT $\to$ IPC to VMM
+- uses VMRESUME to switch to the VM...
+
+	- `sysret` to return to normal processes
+                    </textarea>
+                </section>
+            </div>
+        </div>
+        <script src="assets/reveal-js/dist/reveal.js"></script>
+        <script src="assets/reveal-js/plugin/markdown/markdown.js"></script>
+        <script src="assets/reveal-js/plugin/highlight/highlight.js"></script>
+        <script src="assets/reveal-js/plugin/zoom/zoom.js"></script>
+        <script src="assets/reveal-js/plugin/notes/notes.js"></script>
+        <script src="assets/reveal-js/plugin/math/math.js"></script>
+
+        
+            
+                
+                    
+                        <script src="https://cdn.jsdelivr.net/npm/reveal.js-mermaid-plugin/plugin/mermaid/mermaid.min.js"></script>
+                    
+                
+            
+                
+                    
+                        <script src="https://cdn.jsdelivr.net/npm/reveal-plantuml/dist/reveal-plantuml.min.js"></script>
+                    
+                
+            
+        
+
+        <script>
+            Reveal.initialize({
+                
+                    
+                        history: true,
+                    
+                        slideNumber: "c/t",
+                    
+                        transition: "fade",
+                    
+                
+                plugins: [
+                    RevealMarkdown,
+                    RevealHighlight,
+                    RevealZoom,
+                    RevealNotes,
+                    RevealMath,
+
+                    
+                        
+                            
+                                RevealMermaid,
+                            
+                        
+                            
+                        
+                    
+                ],
+            });
+        </script>
+    </body>
+</html>

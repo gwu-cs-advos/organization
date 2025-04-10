@@ -1106,6 +1106,38 @@ $\forall \hat{x}, \hat{y}, F^l_i, F^h_j, \exists a \hspace{1em} F^l_i(\hat{x}) \
 - can cause information to pass...
 - from high-security to low-security!
 
+---
+
+## Implementations: Separation Kernel
+
+- Separate namespaces, ...
+- to disjoint sets of resources.
+
+$\to$ no shared resources/namespaces, non-interference!
+
+---
+
+## Implementations: Add Communication
+
+Separation kernel is limited
+- No information flow in *either direction*
+
+Communication facilities
+- Pipe from $S_l \to S_h$
+  - Not from $S_h \to S_l$!
+- ...not sufficient, why?
+
+---
+
+## Nuanced Communication
+
+Pipe from $S_l \to S_h$
+
+- never blocks $S_l$
+- doesn't return to $S_l$ if data was queued or not
+
+Non-interference can be hard to get right!
+- Formal verification as in *Nickel*
 
 ---
 

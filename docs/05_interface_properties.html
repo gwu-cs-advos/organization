@@ -1001,6 +1001,114 @@ Example:
 
 ---
 
+# Interface/Implementation Security
+
+---
+
+## Security in Hierarchical Systems
+
+Security:
+- a hierarchically structured system
+- "join-point" component that provides vertical isolation for "subsystems"
+
+> *How might we describe if this component's interface/implementation provides "security" or not?*
+
+<div class="center">
+
+```mermaid
+block-beta
+	columns 2
+	block p0["Not Classified"] end
+	block p1["Classified"] end
+	p3["Secure Component"]:2
+```
+
+</div>
+
+---
+
+## Confidentiality
+
+Secure Component:
+- $S_l$ and $S_h$ are subsystems with low and high security access
+- Confidentiality: if we assume compromised computations in $S_l$ and $S_h$, $S_h$ should not be able to **pass information** to $S_l$
+
+> If $S_l$ ever sees *varying results* depending on *varying actions* by $S_h$ , that can be used to send (at least) a bit of information from $S_h$ to $S_l$.
+
+---
+
+## Example
+
+Don't want high-security (high-confidentiality) documents (e.g passwords) to end up in low-security, and out on the net!
+
+---
+
+## Non-Interference for Information Flow
+
+- Non-Interference: policy encoding the previous policy
+- Prevent the flow of information from $S_h$ to $S_l$
+
+---
+
+## Interface Formulation
+
+$F^s_i(\hat{x}) \to a$
+
+- $F^s_i$: interface functions in secure component
+	- $s \in \{h, l\}$ = security level
+- $\hat{x}$: inputs
+- $a$: outputs
+- $\circ$ - *commutative* execution in secure component
+
+---
+
+## Interface Formulation
+
+$F^s_i(\hat{x}) \to a$
+
+- $F^s_i$: interface functions in secure component
+	- $s \in \{h, l\}$ = security level
+- $\hat{x}$: inputs
+- $a$: outputs
+- $\circ$ - *commutative* execution in secure component
+
+$\forall \hat{x}, \hat{y}, F^l_i, F^h_j, \exists a \hspace{1em} F^l_i(\hat{x}) \to a \circ F^h_j(\hat{y}) \to *$
+
+---
+
+$\forall \color{red}{\hat{x}, \hat{y}}, F^l_i, F^h_j, \exists a \hspace{1em} \color{red}{F^l_i(\hat{x})} \to a \circ \color{red}{F^h_j(\hat{y})} \to *$
+- For all possible inputs to the interface functions
+
+---
+
+$\forall \color{red}{\hat{x}, \hat{y}}, F^l_i, F^h_j, \exists a \hspace{1em} \color{red}{F^l_i(\hat{x})} \to a \circ \color{red}{F^h_j(\hat{y})} \to *$
+- For all possible inputs to the interface functions
+
+$\forall \hat{x}, \hat{y}, F^l_i, F^h_j, \exists \color{red}{a} \hspace{1em} F^l_i(\hat{x}) \color{red}{\to a} \circ F^h_j(\hat{y}) \to *$
+- The low security subsystem's output for a specific input $\hat{x}$
+
+---
+
+$\forall \color{red}{\hat{x}, \hat{y}}, F^l_i, F^h_j, \exists a \hspace{1em} \color{red}{F^l_i(\hat{x})} \to a \circ \color{red}{F^h_j(\hat{y})} \to *$
+- For all possible inputs to the interface functions
+
+$\forall \hat{x}, \hat{y}, F^l_i, F^h_j, \exists \color{red}{a} \hspace{1em} F^l_i(\hat{x}) \color{red}{\to a} \circ F^h_j(\hat{y}) \to *$
+- The low security subsystem's output for a specific input $\hat{x}$
+
+$\forall \hat{x}, \hat{y}, F^l_i, F^h_j, \exists a \hspace{1em} F^l_i(\hat{x}) \to a \color{red}{\circ} F^h_j(\hat{y}) \to *$
+- Must not change regardless order of function execution (commutativity)
+
+---
+
+## Non-Interference Restricts Information Flow
+
+- No action in high or low security domains...
+- can cause information to pass...
+- from high-security to low-security!
+
+
+---
+
 # Implementation Optimizations
 
 ---

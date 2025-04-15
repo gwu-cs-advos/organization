@@ -935,3 +935,105 @@ The VMX hardware emulates a full user/kernel environment!
 
 It was used by Intel in a cloud it was running.
 Now it is used by the company Bedrock as the core of their offering.
+
+## `nickel`
+
+> How does Nickel handle releasing resources?
+
+It doesn't!
+In the current implementation, `spawn` only creates new computations.
+It is very limited to make the research point.
+
+However, expanding it to enable `exit` is interesting.
+The parent would need to coordinate with this (e.g. via `wait`) so that it can know when its `quota` is reclaimed.
+
+> How does debugging work when you don't have globally useful PIDs?
+
+Debugging is really hard to have when you are concerned with information flow, as it requires full information about all potentially debugged processes.
+This makes debugging a core challenge for secure systems, and some, like nickel, simply say "you can't do that!".
+
+> Why does the quota information need to be exposed to user-space?
+
+User-level is likely the only part of the system that understands its purpose, thus how many resources (pages) are required.
+While this is a generally true statement, it is a little nuanced here as the *parent* is choosing the quota of the child.
+Thus the second purpose: the parent is essentially deciding how it wants to split up its resources among children!
+
+This decision does have consequences.
+A process can both allocate resources, and detect when the resources are fully used up (via the return value in `spawn`, or the explicit sycall):
+
+```c
+static long sys_spawn(uint64_t fileid, uint64_t quota)
+	    ...
+        if (proc->nr_free_pages < quota)
+                return -EINVAL;
+	    ...
+}
+
+static long sys_get_quota(void)
+{
+        return get_current_proc()->nr_free_pages;
+}
+```
+
+Thus, information clearly can flow from parent to child (it can pass *at least* a bit of information with how much quota is chooses to give the child.
+
+This seems reasonable as the parent is creating the child to conduct some computations.
+
+> Can't I/O be used as a covert channel?
+
+I/O devices have finite throughput, and it is likely simple to check if your I/O is being slowed down as you're sharing that finite throughput.
+As such, two processes can attempt to saturate I/O throughput, or not, to pass bits of information.
+So this *is* a problem that requires a solution!
+
+I've heard of some systems that throttle a process' throughput requests to a fixed rate to prevent this problem.
+This is another instance of performance and security often being traded for each each other.
+It is hard to have both!
+
+> Can't you just avoid using a lock around the global PID to avoid contention, and potentially passing bits?
+
+This is confusing two things:
+We want to avoid issues around scalability, which requires sharing fewer data-structures (and using things like wait-free synchronization when we can and must share structures).
+Separately, can we use some values to pass information between processes.
+The latter is what we're concerned about.
+So the contention on a `pid` variable is less relevant than *which pid value is actually returned*.
+The question is, if the returned value can be used to pass a bit of information?
+
+> How are nikos and nikos2 related to nistar?
+
+They are different OSes to validate their system.
+`nikos` is a simple system without exposed ids, while `nikos2` exposes ids, thus must have a mechanism for partitioning them.
+
+`nistar` is a much more complete system based on the `histar` system that attempts to track and control information flow.
+
+> Where's the IPC in this system?
+
+In the `nikos*`, there is no IPC!
+A very simple, toy system.
+
+> How does `nickel`'s pid allocation strategy compare to one that is random?
+
+If you allocated pids randomly from within a very large namespace, there is likely a *probabalistic argument* to be made that information flows are challenging.
+If the pid namespace was too small, then an attacker could create processes very quickly until it got a target pid (i.e. `424242`), and another process could do the same to see if it ever got that pid, and could work out the probability (after creating N processes) what the likelihood of none of them having that specific pid, and use that to "send a bit".
+In a very large namespace, the only difference is that it might not be practical to create the number of processes required to get confidence in that computation.
+
+It is cleaner to have a specific algorithm that partitions pids, and have 100% assurance that there are not covert channels.
+
+> How does the system handle higher PIDs here?
+
+It does not!
+There are mathematically fixed numbers of pids given the maximum number of processes, and maximum number of children.
+
+> When a process fails, does the parent reclaim its pages?
+
+No!
+
+The page-fault handler will `yield()`.
+When the scheduler again chooses the process to execute, it will likely immediately fault, yield, etc...
+So there is no reclaiming of resources, and they are forever-more wasted to perpetually fault.
+
+An actual OS would obviously need to solve this issue (see the `nistar` for something more "real").
+
+> What happens if you spawn a child with quota of `0`?
+
+It will `spawn` (i.e. `spawn` will return success), but when it executes, it will page-fault, and in `__vm_alloc`, it will check if there are pages in its quota to allocate for the elf image, which will return "NOPE!".
+This will then cause the sad loop of infinite page-faults and yielding outlined above.

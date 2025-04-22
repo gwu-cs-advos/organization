@@ -1162,7 +1162,7 @@ So long as we only allow enclave updates when it is in the `INIT` state, this se
 
 It simply tracks execution state.
 This includes registers, mode, etc...
-This type of structure is almost always populated in the assembly for the [entry/save](https://github.com/gwu-cs-advos/Komodo/blob/master/monitor/entry.S#L56-L67) and exit/dispatch](https://github.com/gwu-cs-advos/Komodo/blob/master/monitor/entry.S#L267-L288) from the kernel.
+This type of structure is almost always populated in the assembly for the [entry/save](https://github.com/gwu-cs-advos/Komodo/blob/master/monitor/entry.S#L56-L67) and [exit/dispatch](https://github.com/gwu-cs-advos/Komodo/blob/master/monitor/entry.S#L267-L288) from the kernel.
 So trying to execute a dispatcher is synonymous with essentially switching to a thread (i.e. restoring its register contents).
 
 > I'm confused about the interaction of the thread pages, or threads created by Komodo, and processes in the OS.

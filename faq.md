@@ -1037,3 +1037,145 @@ An actual OS would obviously need to solve this issue (see the `nistar` for some
 
 It will `spawn` (i.e. `spawn` will return success), but when it executes, it will page-fault, and in `__vm_alloc`, it will check if there are pages in its quota to allocate for the elf image, which will return "NOPE!".
 This will then cause the sad loop of infinite page-faults and yielding outlined above.
+
+## `komodo`
+
+> How does the attestation work?
+
+I don't know.
+What I pieced together follows.
+
+We depend on a hardware unit that can produce a random secret key at boot time.
+When we boot up an enclave, the monitor hashes of all of its memory, mapping properties, and its thread's starting execution address.
+The enclave combines that measurement with the secret key, and the monitor compares that combination with a known-correct hash, combined with the secret key.
+This is more complicated than it seems it needs to be (i.e. why use the secret key) because the hash can also include enclave-provided data, which enables it to make specialized attestation hashes to be used for public/private key communication outside of the enclave.
+
+I barely understand these words, thus take them as an "outline".
+
+> How does Linux treat the enclave?
+> Is it a normal processes, or something different?
+
+It is different.
+They provide a "device" to communicate with the monitor's APIs to create the enclave.
+Since the enclave is then accessed via communication through that device, it is very much not a normal process.
+This means all of the enclave's APIs (processes that communicate with the enclave) are not composable with the rest of Linux's system calls.
+
+> How is this retyping different from Composite's?
+
+This retyping is simpler as it requires fewer object types (i.e. no capability tables, no threads), and the code is simplified as enclaves only communicate with Linux and vice-versa (thus making all retypings map to those relationships), but is more complicated as retyping into enclave memory *also* removes Linux's access to the page.
+
+> How does Finalize change Linux's access to the enclave?
+
+Once an enclave is finalized, it is enabled to run on its own volition.
+It will proceed through attestation, meaning that from that point on, it trusts that its memory is only updated and modified by it.
+As such, Linux must *lose* the ability to update the enclaves memory before that point.
+That point, is effectively Finalize.
+
+> The paper mentions that the OS is free to construct the enclave as it wishes (potentially incorrectly).
+> Why not simply have APIs that ensure that the enclave is always constructed correctly?
+
+These APIs would somehow need to require that from when the enclave's image is stored on disk, to when it is loaded into memory, that all operations are performed correctly.
+
+A key concept here is that we can rely on the OS to do a lot of the complex, annoying, (and likely not 100% bug-free) operations of reading the enclave's image from disk, and preparing it.
+Only then, when we load the image, do we check that it is properly created.
+
+It is a lot easier to make a trustworthy system were we can validate that the image is correct, then go on and execute it, than to ensure the correctness of the entire path from image storage (which might also be over the network) all the way to execution.
+
+> Are enclaves still subject to side-channel attacks (similar to Meltdown/Spectre)?
+
+Yes! In general if you're sharing resources like processors, cores, or caches, there are always side-channel attacks.
+Intel's SGX has a long history of these attacks at this point.
+
+But recall that if we think about this from a legal perspective, where the host is not maliciously trying to access enclave data, instead that it wants to simply be *able to say* that the cannot provide an enclave's data post-hoc, this isn't an issue.
+
+> Why would the system allow mapping *insecure* pages?
+
+These are better understood as "shared pages" between the OS and the enclave.
+As they are shared, the enclave must be careful to only populate information in those pages that contain data it can share.
+Thus the emphasis on "insecure" here.
+
+Secure pages, in contrast, are those that the OS will no longer have access to after they are mapped to the enclave.
+The enclave doesn't need to be careful with them.
+
+> Where is the page-type state machine managed in the code?
+
+We check that pages are typed properly using `page_is_typed` [throughout](https://github.com/gwu-cs-advos/Komodo/blob/master/monitor/monitor.c#L160) the code.
+All of the [page-types](https://github.com/gwu-cs-advos/Komodo/blob/master/monitor/monitor.h#L13-L21) are well-defined, and the state-machine is encoded in the logic.
+for example, when allocating a page of a specific type, we [check that it is free, then update the `.type` to the specified type](https://github.com/gwu-cs-advos/Komodo/blob/master/monitor/monitor.c#L135-L151).
+
+> Why does the OS perform allocation of pages, not the monitor?
+
+This the core idea behind page-retyping systems:
+The untrusted portion of the system, should it have access to page resources, has the ability to retype them, thus deploy them to be used for specific purposes.
+That Linux does the page allocation/retyping, means that it is in charge of loading the enclave, and the monitor doesn't need all of that complexity (see the answer above).
+We *safely* enable it to create the enclave image, then attest it is created correctly before executing it.
+
+In effect, we're moving a *ton* of complexity out of the parts of the system that must be simple and bug-free, and over to Linux, where there's already near infinite complexity.
+A good trade-off.
+
+> How does `komodo` know if a page is already in use?
+
+The retyping system tracks the page-tables and if they are used by the OS/enclave.
+
+> The monitor is a user-level process.
+> Doesn't that leave it vulnerable?
+
+It is not!
+The monitor runs in the hardware-defined "secure world".
+
+> It is interesting that they don't allow for error codes to be passed from the enclave to the OS to prevent side channels.
+
+Absolutely, very cool!
+
+> What benefit does this have over Intel SGX as it also is hardware-specific?
+
+SGX requires quite a bit more hardware machinery as it must encrypt memory contents within the enclave.
+This does not require that support.
+The downside of this simplicity is that if someone probes memory directly (or dumps memory), they could see the enclave's data directly.
+Physical attacks are much more difficult with SGX.
+
+> Don't enclaves need to change frequently?
+> What if an enclave is supposed to take a new key from the kernel each time we want to run it?
+> Does that mean we need a new image each time?
+
+No!
+This is where enclaves are able to share "insecure" (shared) pages with the Linux kernel.
+So we use the same enclave image each time we boot it up, then the Linux kernel can pass it whatever dynamic data it wants, and the enclave's execution can vary based on that.
+
+> How does Komodo prevent time-of-check-to-time-of-use attacks between finalize and attest?
+
+These attacks can be summarized as: we check that some property is true, then proceed with some sensitive operation assuming it is true...but what if the attacker could change that property between the initial check, and the sensitive operation?
+Welcome, TOCTTOU attack!
+
+The C unfortunately doesn't appear to do attestation, but we get some hints from the [`finalise` function](https://github.com/gwu-cs-advos/Komodo/blob/master/monitor/monitor.c#L464-L477).
+We only enable finalisation if the address is not finalized, and we move directly into the finalized state.
+You can imagine a simple change:
+
+1. check that the address space is in the `INIT` state,
+2. if it is, atomically update it to the `FINISHING` state,
+3. finish the attestation (the hash is ongoing through all previous memory operations), and
+4. update to `FINAL` state if the attestation passes.
+
+So long as we only allow enclave updates when it is in the `INIT` state, this sequence will prevent updates to the enclave from progressing after we check that we can begin the finalization process.
+
+> What is the dispatcher?
+
+It simply tracks execution state.
+This includes registers, mode, etc...
+This type of structure is almost always populated in the assembly for the [entry/save](https://github.com/gwu-cs-advos/Komodo/blob/master/monitor/entry.S#L56-L67) and exit/dispatch](https://github.com/gwu-cs-advos/Komodo/blob/master/monitor/entry.S#L267-L288) from the kernel.
+So trying to execute a dispatcher is synonymous with essentially switching to a thread (i.e. restoring its register contents).
+
+> I'm confused about the interaction of the thread pages, or threads created by Komodo, and processes in the OS.
+> Aren't they are separate entities and that komodo threads are exclusive to the 'secure' world.
+
+Yes, they are separate, and OS threads are not something that the `komodo` monitor knows about.
+
+> If Linux fails, the enclave's execution doesn't really matter as it can't do I/O.
+> So how does one describe the security provided by this?
+
+Enclaves exist to provide *confidentiality*, not *availability*.
+The goal is to keep secrets away from the Linux kernel so that we can have a secure "nook" in the system that won't be comprimised with the next Linux zero-day.
+It is more important in this context to protect secret data, than to ensure continued execution.
+Think the finger verifier to open your phone, or apple/google pay!
+If they stop working it sucks, but not too bad: just reboot.
+If your secret keys are compromised, now your device has no future security, and your private data is compromised!

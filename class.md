@@ -473,6 +473,13 @@ Examples within the systems we've discussed:
 
 As a first-cut expectation, I'd assume that you'd want to stick with a systems language: C, C++, Rust, go.
 
+To submit, please:
+1. fill out the same form you did for project one (in the class' google document),
+2. Make sure to write a `README.md` in your repo with the design, a summary of what you'd completed, and instructions for building/testing, and
+3. a video demonstrating you using/testing your program.
+
+I'd prefer to simply watch the video, and then only dive into the rest if I have questions or concerns.
+
 # Grading
 
 ## Grading Philosophy
